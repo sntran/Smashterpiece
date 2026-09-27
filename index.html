@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#6ec8ff">
+  <title>Smashterpiece</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='29' y='22' width='8' height='38' rx='3' fill='%23ffc94d' transform='rotate(35 33 40)'/%3E%3Crect x='10' y='8' width='34' height='18' rx='4' fill='%23ff5d73' transform='rotate(35 27 17)'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="view"></canvas>
+  <canvas id="confetti"></canvas>
+
+  <div id="loading" class="screen show">
+    <div class="logo">Smashterpiece</div>
+    <div class="spinner"></div>
+  </div>
+
+  <div id="menu" class="screen">
+    <div class="logo bounce">Smashterpiece</div>
+    <div class="tiles">
+      <button class="tile orange" data-action="free" aria-label="Free carving"></button>
+      <button class="tile cyan" data-action="challenge" aria-label="Challenge"></button>
+      <button class="tile purple" data-action="museum" aria-label="Museum"></button>
+    </div>
+    <button class="round small corner-br" data-action="sound" aria-label="Sound"></button>
+  </div>
+
+  <div id="shapes" class="screen">
+    <button class="round corner-tl" data-action="back" aria-label="Back"></button>
+    <div class="tiles grid3" id="shape-tiles"></div>
+  </div>
+
+  <div id="stones" class="screen">
+    <button class="round corner-tl" data-action="back" aria-label="Back"></button>
+    <div class="tiles" id="stone-tiles"></div>
+  </div>
+
+  <div id="play" class="screen hud">
+    <button class="round corner-tl" data-action="home" aria-label="Home"></button>
+    <div class="top-center" id="meter">
+      <div class="stars" id="meter-stars"></div>
+      <button class="round small" data-action="ghost" aria-label="Ghost shape"></button>
+      <button class="round gold pulse" data-action="finish" aria-label="Finish"></button>
+    </div>
+    <div class="side-right">
+      <button class="round" data-action="undo" aria-label="Undo"></button>
+      <button class="round" data-action="save" aria-label="Save to the Museum"></button>
+      <button class="round" data-action="new" aria-label="New stone"></button>
+    </div>
+    <div class="toolbar">
+      <button class="tool" data-tool="hammer" aria-label="Hammer"></button>
+      <button class="tool" data-tool="chisel" aria-label="Point chisel"></button>
+      <button class="tool" data-tool="file" aria-label="File"></button>
+    </div>
+  </div>
+
+  <div id="museum" class="screen hud">
+    <button class="round corner-tl" data-action="home" aria-label="Home"></button>
+    <div class="empty" id="museum-empty">
+      <div class="big-icon" data-icon="museum"></div>
+      <button class="tile orange" data-action="free" aria-label="Free carving"></button>
+    </div>
+    <div class="museum-bar" id="museum-bar">
+      <button class="round" data-action="prev" aria-label="Previous statue"></button>
+      <button class="round red" data-action="delete" aria-label="Delete statue"></button>
+      <button class="round" data-action="next" aria-label="Next statue"></button>
+    </div>
+  </div>
+
+  <div id="celebrate" class="overlay">
+    <div class="card">
+      <div class="headline">You made a Smashterpiece!</div>
+      <div class="stars big" id="result-stars"></div>
+      <div class="row">
+        <button class="round" data-action="save" aria-label="Save to the Museum"></button>
+        <button class="round" data-action="keep" aria-label="Carve more"></button>
+        <button class="round" data-action="home" aria-label="Home"></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirm" class="overlay">
+    <div class="card">
+      <div class="big-icon" id="confirm-icon"></div>
+      <div class="row">
+        <button class="round green" data-action="yes" aria-label="Yes"></button>
+        <button class="round red" data-action="no" aria-label="No"></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="flash" class="flash"></div>
+
+  <noscript>This game needs JavaScript.</noscript>
+  <script type="module" src="./src/game/main.js"></script>
+</body>
+</html>
