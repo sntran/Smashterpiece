@@ -33,7 +33,8 @@ function drawGrain(ctx, x0, y0, stone, rand) {
     const band = stone === 'sandstone' ? Math.sin(y * 0.35 + rand() * 0.2) * 7 : 0;
     for (let x = 0; x < TILE; x++) {
       const k = (y * TILE + x) * 4;
-      const amount = stone === 'marble' || stone === 'glass' ? 6 : stone === 'sand' ? 40 : 22;
+      const smooth = ['marble', 'glass', 'ice', 'chocolate', 'cheese'].includes(stone);
+      const amount = smooth ? 6 : stone === 'sand' ? 40 : 22;
       const grain = (rand() - 0.5) * amount;
       const v = 238 + band + grain;
       d[k] = v;
@@ -60,7 +61,34 @@ function drawGrain(ctx, x0, y0, stone, rand) {
       ctx.fillRect(x0 + rand() * TILE, y0 + rand() * TILE, 3, 3);
     }
   }
-  if (stone === 'glass') {
+  if (stone === 'wood') {
+    // Wavy lines along the grain.
+    ctx.strokeStyle = 'rgba(90,50,20,0.35)';
+    ctx.lineWidth = 3;
+    for (let n = 0; n < 6; n++) {
+      const x = x0 + 10 + n * 20 + rand() * 6;
+      ctx.beginPath();
+      ctx.moveTo(x, y0);
+      ctx.bezierCurveTo(x + 8, y0 + 40, x - 8, y0 + 80, x + 2, y0 + TILE);
+      ctx.stroke();
+    }
+  }
+  if (stone === 'cheese') {
+    // Very small holes.
+    for (let n = 0; n < 5; n++) {
+      ctx.fillStyle = 'rgba(200,130,20,0.35)';
+      ctx.beginPath();
+      ctx.arc(x0 + 16 + rand() * 96, y0 + 16 + rand() * 96, 4 + rand() * 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  if (stone === 'ice') {
+    for (let n = 0; n < 30; n++) {
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.fillRect(x0 + rand() * TILE, y0 + rand() * TILE, 3, 3);
+    }
+  }
+  if (stone === 'glass' || stone === 'ice') {
     // Shiny lines.
     ctx.strokeStyle = 'rgba(255,255,255,0.9)';
     ctx.lineCap = 'round';
@@ -161,6 +189,7 @@ export function stoneAtlas(stone) {
         drawPedestal(ctx, x0, y0);
       } else {
         drawGrain(ctx, x0, y0, stone, rand);
+        if (stone === 'chocolate') drawBevel(ctx, x0, y0);
         for (let k = 0; k < (col === 0 ? 0 : col === 1 ? 1 : 3); k++) drawCrack(ctx, x0, y0, rand);
       }
       drawBevel(ctx, x0, y0);

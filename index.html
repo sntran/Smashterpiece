@@ -4,10 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Smash">
   <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <meta name="theme-color" content="#6ec8ff">
   <title>Smashterpiece</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='29' y='22' width='8' height='38' rx='3' fill='%23ffc94d' transform='rotate(35 33 40)'/%3E%3Crect x='10' y='8' width='34' height='18' rx='4' fill='%23ff5d73' transform='rotate(35 27 17)'/%3E%3C/svg%3E">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./style.css">
   <script type="importmap">
     {
@@ -30,9 +34,12 @@
   <div id="menu" class="screen">
     <div class="logo bounce">Smashterpiece</div>
     <div class="tiles">
-      <button class="tile orange" data-action="free" aria-label="Free carving"></button>
-      <button class="tile cyan" data-action="challenge" aria-label="Challenge"></button>
-      <button class="tile purple" data-action="museum" aria-label="Museum"></button>
+      <button class="tile orange" data-action="free" data-label="Carve" aria-label="Carve"></button>
+      <button class="tile cyan" data-action="challenge" data-label="Shapes" aria-label="Shapes"></button>
+      <button class="tile purple" data-action="museum" data-label="Museum" aria-label="Museum"></button>
+      <button class="tile yellow" data-action="treasures" data-label="Treasures" aria-label="Treasures">
+        <span class="badge" id="treasure-badge"></span>
+      </button>
     </div>
     <button class="round small corner-br" data-action="sound" aria-label="Sound"></button>
   </div>
@@ -45,6 +52,14 @@
   <div id="stones" class="screen">
     <button class="round corner-tl" data-action="back" aria-label="Back"></button>
     <div class="tiles" id="stone-tiles"></div>
+  </div>
+
+  <div id="treasures" class="screen">
+    <button class="round corner-tl" data-action="back" aria-label="Back"></button>
+    <div class="book">
+      <div class="book-head"><span class="book-icon" data-icon="chest"></span><span id="treasure-count"></span></div>
+      <div class="book-grid" id="treasure-grid"></div>
+    </div>
   </div>
 
   <div id="play" class="screen hud">
@@ -70,7 +85,7 @@
     <button class="round corner-tl" data-action="home" aria-label="Home"></button>
     <div class="empty" id="museum-empty">
       <div class="big-icon" data-icon="museum"></div>
-      <button class="tile orange" data-action="free" aria-label="Free carving"></button>
+      <button class="tile orange" data-action="free" data-label="Carve" aria-label="Carve"></button>
     </div>
     <div class="museum-bar" id="museum-bar">
       <button class="round" data-action="prev" aria-label="Previous statue"></button>
@@ -102,6 +117,13 @@
   </div>
 
   <div id="flash" class="flash"></div>
+
+  <div id="found" class="found" aria-live="polite">
+    <div class="rays"></div>
+    <div class="found-emoji"></div>
+    <div class="found-name"></div>
+    <div class="new-badge">NEW!</div>
+  </div>
 
   <noscript>This game needs JavaScript.</noscript>
   <script type="module" src="./src/game/main.js"></script>

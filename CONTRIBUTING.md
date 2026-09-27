@@ -22,6 +22,11 @@ messages.
 - Put the tests in `test/`. The tests import only modules from
   `src/core/`. Use only `node:test` and `node:assert`.
 - Use only relative paths for the files of the game.
+- When you add a file to the game, add it to the `FILES` list in
+  `sw.js`, and to the deploy step in `.github/workflows/pages.yml` if
+  it is in a new folder. A test makes sure that `sw.js` keeps all files.
+- When you change a game file, change the `CACHE` name in `sw.js`, so
+  that the installed app gets a clean copy.
 
 ## Tests
 

@@ -9,24 +9,34 @@ other sites, or data collection. All data stays in the browser.
 
 ## How to play
 
-The game does not use words. Each button has a large picture.
+Each button has a large picture. The buttons on the start screen and
+the stone picker also have a short name, for players who can read.
 
-1. On the start screen, select one of the three large buttons:
-   - **Block and hammer**: free mode. Carve any shape.
-   - **Ghost with a star**: challenge mode. Carve a shape.
+1. On the start screen, select one of the four large buttons:
+   - **Carve** (block and hammer): free mode. Carve any shape.
+   - **Shapes** (ghost with a star): challenge mode. Carve a shape.
    - **Museum**: look at your statues.
+   - **Treasures** (treasure chest): look at the treasures that you
+     found. The red badge shows how many kinds you have.
 2. In challenge mode, select a shape: star, fish, heart, duck, smiley
    face, or rocket.
-3. Select a stone. The number of hammers on the button shows the number
-   of hits that each piece of stone needs:
+3. Select a material. The number of hammers on the button shows the
+   number of hits that each piece needs:
    - Sand (light yellow): 1 hit. Sand cannot hang in the air. Thin parts
      with nothing below them crumble and pour down.
    - Sandstone (orange): 1 hit.
+   - Chocolate (brown): 1 hit. It has small white chocolate chips.
+   - Cheese (yellow): 1 hit. It has air holes in it. Sometimes a mouse
+     squeaks.
+   - Ice (very light blue): 1 hit. You can see through ice. It breaks
+     into shiny pieces.
+   - Wood (brown with rings): 2 hits. It makes thin wood shavings.
    - Marble (white): 2 hits. Small cracks show after the first hit.
-   - Granite (gray): 3 hits.
    - Glass (light blue): 2 hits. You can see through glass. It cracks
-     after the first hit and breaks into shiny pieces. In glass, the
-     ghost shape is pink.
+     after the first hit and breaks into shiny pieces.
+   - Granite (gray): 3 hits.
+
+   In ice and glass, the ghost shape is pink.
 4. Select a tool at the bottom of the screen:
    - **Hammer**: removes a large ball of stone.
    - **Point chisel**: removes a small ball of stone.
@@ -46,6 +56,21 @@ camera moves to show all of the stone.
 
 When a piece of stone does not touch the pedestal any more, it falls
 and breaks.
+
+### Hidden treasures
+
+Each new block has 2 or 3 treasures in it, in random places. You cannot
+see them at the start. Small gold sparkles come out of the stone when a
+treasure is near the surface. Dig there! When a treasure touches the
+air, it jumps out of the stone. A "NEW!" badge shows when you find a
+treasure for the first time.
+
+There are 18 treasures: 6 common, 6 rare and 6 super rare. The game
+keeps your treasures in the browser. Open **Treasures** on the start
+screen to see your collection. A treasure that you did not find yet is
+a gray shape with a question mark. Tap a found treasure to hear it.
+
+In challenge mode, the treasures are never in the ghost shape.
 
 ### Buttons during the game
 
@@ -75,6 +100,26 @@ camera. Use the arrow buttons to go to the next statue, or tap a
 statue. To delete a statue, push the trash button, then push the green
 check mark. The Museum keeps up to 40 statues. When it is full, it
 removes the oldest statue.
+
+## Install the game on a phone or a tablet
+
+Smashterpiece is a Progressive Web App (PWA). You can install it and
+play it without a network connection.
+
+- **iPhone and iPad (Safari):** open the game, push the **Share**
+  button, then push **Add to Home Screen**.
+- **Android (Chrome):** open the game, open the menu, then push
+  **Install app** or **Add to Home screen**.
+- **Computer (Chrome or Edge):** push the install button in the address
+  bar.
+
+After the first visit, the service worker (`sw.js`) keeps a copy of the
+game files and of three.js. Then the game starts without a network
+connection. When a new version is on the server, the game gets it in
+the background and shows it at the next start.
+
+On iPhone and iPad, the installed app has its own storage. The Museum
+and the treasures in the app are not the same as in Safari.
 
 ## How to run the game on your computer
 
@@ -118,8 +163,8 @@ GitHub Pages.
 
 The workflow runs the tests first. If a test fails, the workflow does
 not deploy. When the tests pass, the workflow copies `index.html`,
-`style.css`, and the `src` folder to the site. It does not deploy the
-tests or the workflow files.
+`style.css`, `manifest.webmanifest`, `sw.js`, and the `src` and `icons`
+folders to the site. It does not deploy the tests or the workflow files.
 
 The game uses only relative paths. Thus it works at
 `https://<USER>.github.io/<REPO>/` and on a local server.
@@ -130,6 +175,9 @@ The game uses only relative paths. Thus it works at
 | --- | --- |
 | `index.html` | The page, the import map for three.js, and the screens. |
 | `style.css` | The look of the buttons and the screens. |
+| `manifest.webmanifest` | The app data for the installed app (PWA). |
+| `sw.js` | The service worker that keeps the files for offline play. |
+| `icons/` | The app icons. |
 | `src/core/` | The game logic. These modules do not use three.js or the DOM. |
 | `src/game/` | The 3D views, the sounds, and the user interface. |
 | `test/` | The unit tests for the modules in `src/core/`. |
@@ -141,6 +189,9 @@ The modules in `src/core/` are:
 | `grid.js` | The 32 x 32 x 32 voxel grid and the pedestal. |
 | `stones.js` | The hardness of each stone, and which stone crumbles. |
 | `sand.js` | The crumble rule for sand. |
+| `holes.js` | The air holes in cheese. |
+| `treasures.js` | The hidden treasures and the treasure collection. |
+| `random.js` | A random number generator with a seed. |
 | `carve.js` | The voxel removal for each tool. |
 | `connect.js` | The connection check. It finds the pieces that fall. |
 | `shapes.js` | The ghost shapes for the challenge mode. |

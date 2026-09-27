@@ -34,6 +34,7 @@ const tmpMatrix = new THREE.Matrix4();
 const tmpScale = new THREE.Vector3();
 const tmpQuat = new THREE.Quaternion();
 const tmpColor = new THREE.Color();
+const tmpStretch = new THREE.Vector3();
 
 export class Particles {
   // `floorAt(x, z)` gives the floor height. `solidAt(p)` is true when the
@@ -61,8 +62,10 @@ export class Particles {
     this.group.add(this.chips.mesh, this.puffs.mesh, this.sparks.mesh);
   }
 
-  chip(pos, vel, size, color, life = 2.5 + Math.random() * 1.5) {
-    this.chips.add({ pos: pos.clone(), vel: vel.clone(), size, color, life, spin: 6 + Math.random() * 10, rest: false });
+  // `stretch` changes the shape of the chip, for example [1.8, 0.2, 0.6]
+  // for a thin wood shaving.
+  chip(pos, vel, size, color, life = 2.5 + Math.random() * 1.5, stretch = null) {
+    this.chips.add({ pos: pos.clone(), vel: vel.clone(), size, color, life, spin: 6 + Math.random() * 10, rest: false, stretch });
   }
 
   puff(pos, vel, size, color, life = 0.7 + Math.random() * 0.6) {
@@ -120,6 +123,7 @@ export class Particles {
       }
       const fade = Math.min(1, (p.life - p.age) / 0.4);
       tmpScale.setScalar(p.size * fade);
+      if (p.stretch) tmpScale.multiply(tmpStretch.fromArray(p.stretch));
       tmpMatrix.compose(p.pos, p.quat, tmpScale);
       pool.mesh.setMatrixAt(n, tmpMatrix);
       tmpColor.setRGB(p.color[0], p.color[1], p.color[2]);

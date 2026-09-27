@@ -175,11 +175,6 @@ button svg {
 .tile.green { background: #c8f7d4; }
 .tile.yellow { background: #fff0b8; }
 
-.tile > svg {
-  flex: 1;
-  min-height: 0;
-}
-
 .tile .emoji {
   font-size: calc(var(--tile) * 0.5);
   line-height: 1;
@@ -472,6 +467,251 @@ body.flashwhite::after {
   to { opacity: 0; }
 }
 
+.tile {
+  position: relative;
+}
+
+.tile > svg {
+  flex: 1;
+  min-height: 0;
+}
+
+.tile .label {
+  display: block;
+  margin-top: 4%;
+  font-size: calc(var(--tile) * 0.13);
+  font-weight: 900;
+  line-height: 1.1;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.tile .emoji + .label {
+  margin-top: 6%;
+}
+
+.tile .badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: var(--red);
+  color: white;
+  border: 4px solid var(--ink);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: calc(var(--tile) * 0.11);
+  font-weight: 900;
+}
+
+/* The stone picker has many stones. The tiles are smaller. */
+#stones {
+  --tile: clamp(96px, 19vmin, 170px);
+  overflow-y: auto;
+}
+
+#stones.show {
+  justify-content: safe center;
+  padding: calc(var(--btn) + 28px) 0 24px;
+}
+
+.tile.stone {
+  padding: calc(var(--tile) * 0.1);
+}
+
+.tile.stone canvas {
+  width: 78%;
+  height: 46%;
+  flex: none;
+}
+
+.tile.stone .hits {
+  height: 18%;
+  margin-top: 2%;
+}
+
+/* The treasure book. */
+#treasures.show {
+  display: flex;
+  justify-content: center;
+  overflow-y: auto;
+  padding: calc(max(16px, env(safe-area-inset-top)) + var(--btn) + 8px) 16px 24px;
+}
+
+.book {
+  background: #fff8e6;
+  border: 6px solid var(--ink);
+  border-radius: 32px;
+  box-shadow: 0 10px 0 var(--ink);
+  padding: clamp(12px, 3vmin, 28px);
+  max-width: 820px;
+  width: 100%;
+  height: max-content;
+}
+
+.book-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: clamp(28px, 6vmin, 48px);
+  font-weight: 900;
+  margin-bottom: 12px;
+}
+
+.book-icon {
+  width: clamp(48px, 9vmin, 72px);
+  height: clamp(48px, 9vmin, 72px);
+}
+
+.book-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(84px, 16vmin, 120px), 1fr));
+  gap: clamp(8px, 2vmin, 16px);
+}
+
+.treasure {
+  position: relative;
+  aspect-ratio: 1;
+  border: 4px solid var(--ink);
+  border-radius: 24%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #e8e3ef;
+  box-shadow: 0 5px 0 var(--ink);
+}
+
+.treasure.common { background: #cdeffd; }
+.treasure.rare { background: #e3d4ff; }
+.treasure.super { background: linear-gradient(135deg, #fff0b8, #ffc971); }
+
+.treasure .t-emoji {
+  font-size: clamp(36px, 8vmin, 60px);
+  line-height: 1;
+}
+
+.treasure:not(.got) .t-emoji {
+  filter: brightness(0);
+  opacity: 0.2;
+}
+
+.treasure .t-name {
+  font-size: clamp(12px, 2.4vmin, 17px);
+  font-weight: 900;
+  margin-top: 4px;
+}
+
+.treasure .t-count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--green);
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  padding: 0 7px;
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.wiggle {
+  animation: wiggle 0.5s ease-in-out;
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-12deg) scale(1.1); }
+  75% { transform: rotate(12deg) scale(1.1); }
+}
+
+/* A found treasure. */
+.found {
+  position: fixed;
+  left: 50%;
+  top: 38%;
+  width: clamp(150px, 34vmin, 260px);
+  height: clamp(150px, 34vmin, 260px);
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+  z-index: 26;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+}
+
+.found.go {
+  animation: found 2.2s ease-out forwards;
+}
+
+.found .rays {
+  position: absolute;
+  inset: -30%;
+  border-radius: 50%;
+  background: repeating-conic-gradient(rgba(255, 211, 92, 0.85) 0 12deg, rgba(255, 255, 255, 0.6) 12deg 24deg);
+  mask-image: radial-gradient(circle, black 30%, transparent 70%);
+  -webkit-mask-image: radial-gradient(circle, black 30%, transparent 70%);
+  animation: spin 4s linear infinite;
+}
+
+.found.rare .rays {
+  background: repeating-conic-gradient(rgba(179, 136, 255, 0.85) 0 12deg, rgba(255, 255, 255, 0.6) 12deg 24deg);
+}
+
+.found.super .rays {
+  background: repeating-conic-gradient(#ff5d73 0 10deg, #ffd35c 10deg 20deg, #4ade80 20deg 30deg, #4cc9f0 30deg 40deg, #b388ff 40deg 50deg);
+}
+
+.found-emoji {
+  position: relative;
+  font-size: clamp(80px, 18vmin, 140px);
+  line-height: 1;
+  filter: drop-shadow(0 6px 0 rgba(59, 42, 82, 0.35));
+}
+
+.found-name {
+  position: relative;
+  font-size: clamp(24px, 5vmin, 40px);
+  font-weight: 900;
+  color: white;
+  -webkit-text-stroke: 1.5px var(--ink);
+  paint-order: stroke fill;
+  text-shadow: 0 3px 0 var(--ink);
+}
+
+.new-badge {
+  display: none;
+  position: absolute;
+  top: 2%;
+  right: -6%;
+  background: var(--red);
+  color: white;
+  font-weight: 900;
+  font-size: clamp(18px, 4vmin, 28px);
+  padding: 4px 12px;
+  border: 4px solid var(--ink);
+  border-radius: 999px;
+  transform: rotate(12deg);
+}
+
+.found.new .new-badge {
+  display: block;
+}
+
+@keyframes found {
+  0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+  15% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+  25% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -90%) scale(0.5); opacity: 0; }
+}
+
 /* Phones in portrait: two rows of buttons at the top. */
 @media (max-width: 600px) {
   :root {
@@ -562,4 +802,11 @@ body.flashwhite::after {
     width: 64px;
     height: 64px;
   }
+}
+
+.tile.stone .label {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  padding: 0 8px;
+  font-size: calc(var(--tile) * 0.12);
 }

@@ -77,6 +77,12 @@ export const ICONS = {
   challenge: svg(`
     <path d="M12 58 V30 A20 20 0 0 1 52 30 V58 L45 52 L38 58 L32 52 L26 58 L19 52 Z" fill="#aef3ff"/>
     <path d="M32 18 l4 8 l9 1 l-7 6 l2 9 l-8 -5 l-8 5 l2 -9 l-7 -6 l9 -1 Z" fill="#ffd35c" stroke-width="2.5"/>`),
+  chest: svg(`
+    <path d="M8 28 Q8 12 32 12 Q56 12 56 28 Z" fill="#ff9f43"/>
+    <rect x="8" y="28" width="48" height="26" rx="3" fill="#c96f2d"/>
+    <rect x="8" y="26" width="48" height="6" fill="#ffd35c"/>
+    <rect x="27" y="24" width="10" height="14" rx="2" fill="#ffd35c"/>
+    <path d="M14 14 l2 -6 l2 6 M46 10 l2 -6 l2 6" stroke="#ffd35c" stroke-width="3"/>`),
   question: svg(`<circle cx="32" cy="32" r="26" fill="#ffd35c"/><path d="M24 24 A8 8 0 1 1 34 32 Q32 34 32 38" fill="none" stroke-width="6"/><circle cx="32" cy="48" r="3" fill="${LINE}"/>`),
 };
 
