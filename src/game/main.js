@@ -5,7 +5,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 import { createBlock, PEDESTAL, EMPTY } from '../core/grid.js';
-import { hardnessOf, STONE_NAMES } from '../core/stones.js';
+import { hardnessOf, crumblesOf, STONE_NAMES } from '../core/stones.js';
+import { crumbleSand } from '../core/sand.js';
 import { applyHit, planHit } from '../core/carve.js';
 import { removeFloating } from '../core/connect.js';
 import { raycastGrid } from '../core/raycast.js';
@@ -56,7 +57,7 @@ class Game {
     this.storage = safeStorage();
     this.canvas = $('#view');
     this.renderer = createRenderer(this.canvas);
-    this.camera = new THREE.PerspectiveCamera(45, 1, 0.5, 700);
+    this.camera = new THREE.PerspectiveCamera(45, 1, 0.5, 900);
     this.controls = new OrbitControls(this.camera, this.canvas);
     this.controls.enablePan = false;
     this.controls.enableDamping = true;
@@ -189,7 +190,7 @@ class Game {
     this.controls.enabled = name === 'play' || name === 'museum';
     if (inWorkshop) {
       this.controls.minDistance = 25;
-      this.controls.maxDistance = 140;
+      this.controls.maxDistance = Math.max(140, this.fitDistance() * 1.4);
       this.controls.maxPolarAngle = 1.52;
       this.controls.minPolarAngle = 0.05;
     } else {
@@ -376,13 +377,19 @@ class Game {
     this.show('stones');
   }
 
-  resetCamera() {
-    this.controls.target.copy(WORKSHOP_TARGET);
+  // The camera distance that shows all of the stone on this screen.
+  fitDistance() {
     const aspect = this.camera.aspect || 1;
     const halfFov = THREE.MathUtils.degToRad(this.camera.fov / 2);
     const fitHeight = 31 / Math.tan(halfFov);
     const fitWidth = 30 / (Math.tan(halfFov) * aspect);
-    const distance = Math.max(fitHeight, fitWidth);
+    return Math.max(fitHeight, fitWidth);
+  }
+
+  resetCamera() {
+    this.controls.target.copy(WORKSHOP_TARGET);
+    const distance = this.fitDistance();
+    this.controls.maxDistance = Math.max(140, distance * 1.4);
     this.camera.position.set(distance * 0.38, WORKSHOP_TARGET.y + distance * 0.34, distance * 0.88);
     this.camera.lookAt(this.controls.target);
     this.controls.update();
@@ -465,22 +472,41 @@ class Game {
       return;
     }
     this.history.push(before);
+    const crumbled = crumblesOf(this.stone) && result.removed.length > 0 ? crumbleSand(grid, hit.x, hit.y, hit.z) : [];
     const pieces = result.removed.length > 0 ? removeFloating(grid) : [];
     this.stoneView.markCells(result.removed);
+    this.stoneView.markCells(crumbled);
     this.stoneView.markCells(result.cracked);
     for (const piece of pieces) this.stoneView.markCells(piece.map((c) => c.index));
     this.stoneView.flush();
     for (const piece of pieces) this.pieces.add(piece, grid, this.stone, this.hardness);
 
     this.effects(result, point, n, before);
+    if (crumbled.length > 0) this.pourSand(crumbled);
     this.unsaved = true;
     this.updateButtons();
     this.updateScore();
     this.refreshAim();
   }
 
+  // Loose sand pours down as small grains.
+  pourSand(cells) {
+    const xyz = [0, 0, 0];
+    const step = Math.max(1, Math.floor(cells.length / 60));
+    for (let k = 0; k < cells.length; k += step) {
+      const i = cells[k];
+      this.grid.coords(i, xyz);
+      const p = this.stoneView.toWorld(xyz[0] + 0.5, xyz[1] + 0.5, xyz[2] + 0.5);
+      const vel = new THREE.Vector3((Math.random() - 0.5) * 2, -Math.random() * 3, (Math.random() - 0.5) * 2);
+      this.particles.chip(p, vel, 0.2 + Math.random() * 0.2, this.colorOf(i), 1.5 + Math.random());
+    }
+    this.sounds.pour(Math.min(1.2, 0.3 + cells.length / 40));
+  }
+
   effects(result, point, normal, before) {
     const { removed, cracked } = result;
+    // Sand makes small grains. Other stones make larger chips.
+    const grain = this.stone === 'sand' ? 0.4 : 1;
     const xyz = [0, 0, 0];
     const dust = STONE_LOOKS[this.stone].dust;
     const tangent = new THREE.Vector3(normal.y, normal.z, normal.x);
@@ -504,7 +530,7 @@ class Game {
     if (this.tool === 'hammer') {
       const chips = removed.length > 0 ? Math.min(28, 8 + Math.floor(removed.length / 5)) : 4;
       for (const i of sample(removed.length ? removed : cracked, chips)) {
-        this.particles.chip(cellPoint(i), spray(rand(8, 18), 9, rand(4, 12)), rand(0.4, 0.95), this.colorOf(i));
+        this.particles.chip(cellPoint(i), spray(rand(8, 18), 9, rand(4, 12)), rand(0.4, 0.95) * grain, this.colorOf(i));
       }
       for (let k = 0; k < (removed.length ? 7 : 3); k++) {
         this.particles.puff(point, spray(rand(4, 9), 6, rand(0, 3)), rand(0.9, 2.1), dust);
@@ -514,7 +540,7 @@ class Game {
       this.shake = Math.max(this.shake, removed.length > 60 ? 0.6 : 0.35);
     } else if (this.tool === 'chisel') {
       for (const i of sample(removed.length ? removed : cracked, removed.length ? 7 : 3)) {
-        this.particles.chip(cellPoint(i), spray(rand(14, 24), 5, rand(2, 8)), rand(0.25, 0.45), this.colorOf(i));
+        this.particles.chip(cellPoint(i), spray(rand(14, 24), 5, rand(2, 8)), rand(0.25, 0.45) * grain, this.colorOf(i));
       }
       for (let k = 0; k < 7; k++) {
         this.particles.spark(point, spray(rand(10, 22), 12, rand(0, 8)), rand(0.25, 0.45), [1, 0.85, 0.3]);
@@ -533,6 +559,14 @@ class Game {
         this.particles.puff(point.clone().addScaledVector(tangent, rand(-1.5, 1.5)), vel, rand(0.5, 1.1), dust, rand(0.5, 1));
       }
       this.sounds.file(this.stone);
+    }
+    if (this.stone === 'glass' && removed.length > 0) {
+      // Glass breaks into shiny pieces.
+      const shards = Math.min(24, 6 + Math.floor(removed.length / 6));
+      for (const i of sample(removed, shards)) {
+        const color = Math.random() < 0.4 ? [1, 1, 1] : [0.55, 0.9, 1];
+        this.particles.spark(cellPoint(i), spray(rand(8, 20), 10, rand(4, 12)), rand(0.3, 0.7), color, rand(0.5, 0.9));
+      }
     }
     if (cracked.length > 0 && removed.length === 0) this.sounds.crack();
     if (removed.length > 0 && before && this.hardness > 1) {
@@ -634,8 +668,11 @@ class Game {
     $('#museum-bar').style.display = empty ? 'none' : '';
     this.show('museum');
     const focus = this.museum.focusPoint();
+    // A narrow screen needs a camera that is farther away.
+    const far = Math.max(1, 0.8 / this.camera.aspect);
+    this.controls.maxDistance = 34 * far;
     this.controls.target.copy(focus);
-    this.camera.position.set(focus.x + 5, focus.y + 6, focus.z + 23);
+    this.camera.position.set(focus.x + 5 * far, focus.y + 6 * far, focus.z + 23 * far);
     this.controls.update();
     this.focusGoal = null;
     this.updateMuseumButtons();
@@ -738,9 +775,17 @@ class Game {
   onResize() {
     const w = window.innerWidth;
     const h = window.innerHeight;
+    const before = this.fitDistance();
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+    if (this.screen !== 'museum' && this.screen !== 'loading') {
+      // When the phone turns, keep all of the stone on the screen.
+      const after = this.fitDistance();
+      this.controls.maxDistance = Math.max(140, after * 1.4);
+      const offset = this.camera.position.clone().sub(this.controls.target);
+      this.camera.position.copy(this.controls.target).addScaledVector(offset, after / before);
+    }
   }
 
   frame() {

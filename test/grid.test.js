@@ -56,7 +56,9 @@ test('isStone is false for empty and pedestal cells', () => {
 });
 
 test('each stone has the correct hardness', () => {
-  assert.deepEqual(STONE_NAMES, ['sandstone', 'marble', 'granite']);
+  assert.deepEqual(STONE_NAMES, ['sand', 'sandstone', 'marble', 'granite', 'glass']);
+  assert.equal(hardnessOf('sand'), 1);
+  assert.equal(hardnessOf('glass'), 2);
   assert.equal(hardnessOf('sandstone'), 1);
   assert.equal(hardnessOf('marble'), 2);
   assert.equal(hardnessOf('granite'), 3);

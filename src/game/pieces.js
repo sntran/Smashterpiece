@@ -87,6 +87,7 @@ export class FallingPieces {
       age: 0,
       halfHeight: (max[1] - min[1] + 1) / 2,
       count: piece.length,
+      stone,
     });
     if (piece.length > 12) this.sounds.whee(piece.length);
   }
@@ -131,14 +132,24 @@ export class FallingPieces {
       const { index, p: local } = item.local[k];
       p.copy(local).applyMatrix4(mesh.matrixWorld);
       const vel = new THREE.Vector3((Math.random() - 0.5) * 16, 6 + Math.random() * 12, (Math.random() - 0.5) * 16);
-      this.particles.chip(p, vel, 0.5 + Math.random() * 0.7, this.colorOf(index));
+      if (item.stone === 'sand') {
+        // Sand falls apart into small grains.
+        this.particles.chip(p, vel.multiplyScalar(0.4), 0.2 + Math.random() * 0.25, this.colorOf(index));
+      } else if (item.stone === 'glass' && k % 2 === 0) {
+        const color = Math.random() < 0.4 ? [1, 1, 1] : [0.55, 0.9, 1];
+        this.particles.spark(p, vel, 0.4 + Math.random() * 0.5, color, 0.6 + Math.random() * 0.4);
+      } else {
+        this.particles.chip(p, vel, 0.5 + Math.random() * 0.7, this.colorOf(index));
+      }
     }
     const dust = Math.min(14, 3 + Math.floor(item.count / 20));
     for (let k = 0; k < dust; k++) {
       const vel = new THREE.Vector3((Math.random() - 0.5) * 10, 2 + Math.random() * 3, (Math.random() - 0.5) * 10);
       this.particles.puff(mesh.position, vel, 1.5 + Math.random() * 2.5, [1, 1, 1]);
     }
-    this.sounds.crash(item.count);
+    if (item.stone === 'sand') this.sounds.pour(0.8);
+    else this.sounds.crash(item.count);
+    if (item.stone === 'glass') this.sounds.shatter(item.count);
     this.group.remove(mesh);
     mesh.geometry.dispose();
   }

@@ -1,10 +1,9 @@
 // The Museum: a small 3D room with the saved statues on pedestals.
 
 import * as THREE from 'three';
-import { buildMesh } from '../core/mesher.js';
 import { decodeStatue } from '../core/codec.js';
 import { STONES } from '../core/stones.js';
-import { voxelMeshOptions, geometryFrom, stoneMaterial } from './stone-view.js';
+import { buildVoxelMeshes } from './stone-view.js';
 import { addLights } from './scene.js';
 import { checkerTexture, wallTexture, toonGradient } from './textures.js';
 import { SHAPE_EMOJI } from './icons.js';
@@ -97,15 +96,15 @@ export class MuseumView {
     const wallMap = wallTexture();
     wallMap.repeat.set(length / 16, 1);
     const wallMaterial = new THREE.MeshToonMaterial({ map: wallMap, gradientMap: toonGradient() });
-    const back = new THREE.Mesh(new THREE.PlaneGeometry(length, 16), wallMaterial);
-    back.position.set(left + length / 2, 8, -12);
+    const back = new THREE.Mesh(new THREE.PlaneGeometry(length, 30), wallMaterial);
+    back.position.set(left + length / 2, 15, -12);
     this.room.add(back);
     const sideMap = wallTexture();
     sideMap.repeat.set(34 / 16, 1);
     const sideMaterial = new THREE.MeshToonMaterial({ map: sideMap, gradientMap: toonGradient() });
     for (const [x, turn] of [[left, Math.PI / 2], [left + length, -Math.PI / 2]]) {
-      const wall = new THREE.Mesh(new THREE.PlaneGeometry(34, 16), sideMaterial);
-      wall.position.set(x, 8, 5);
+      const wall = new THREE.Mesh(new THREE.PlaneGeometry(34, 30), sideMaterial);
+      wall.position.set(x, 15, 5);
       wall.rotation.y = turn;
       this.room.add(wall);
     }
@@ -143,19 +142,25 @@ export class MuseumView {
   }
 
   statueMesh(statue) {
-    const { size, cells, stone } = statue;
-    const hardness = STONES[stone]?.hardness ?? 1;
-    const options = voxelMeshOptions({
+    const { size, cells } = statue;
+    const stone = STONES[statue.stone] ? statue.stone : 'sandstone';
+    const group = new THREE.Group();
+    const meshes = buildVoxelMeshes({
+      box: { x0: 0, y0: 0, z0: 0, x1: size, y1: size, z1: size },
       valueAt: (x, y, z) =>
         x < 0 || y < 0 || z < 0 || x >= size || y >= size || z >= size ? 0 : cells[x + size * (y + size * z)],
       size,
-      stone: STONES[stone] ? stone : 'sandstone',
-      hardness,
+      stone,
+      hardness: STONES[stone].hardness,
     });
-    const data = buildMesh({ x0: 0, y0: 0, z0: 0, x1: size, y1: size, z1: size, ...options });
-    const mesh = new THREE.Mesh(geometryFrom(data), stoneMaterial(STONES[stone] ? stone : 'sandstone'));
-    mesh.userData.shared = true;
-    return mesh;
+    for (const mesh of meshes) {
+      mesh.matrixAutoUpdate = true;
+      // The stone materials are shared. Do not dispose them.
+      mesh.userData.shared = true;
+      group.add(mesh);
+    }
+    group.userData.shared = true;
+    return group;
   }
 
   get count() {
@@ -187,10 +192,10 @@ export class MuseumView {
 
   // Return the index of the statue under the ray, or -1.
   pick(raycaster) {
-    const meshes = this.items.map((item) => item.mesh);
-    const hits = raycaster.intersectObjects(meshes, false);
+    const groups = this.items.map((item) => item.mesh);
+    const hits = raycaster.intersectObjects(groups, true);
     if (hits.length === 0) return -1;
-    return meshes.indexOf(hits[0].object);
+    return groups.indexOf(hits[0].object.parent);
   }
 
   update(time) {
@@ -201,6 +206,7 @@ export class MuseumView {
     for (const child of [...this.room.children]) {
       this.room.remove(child);
       child.geometry?.dispose();
+      for (const part of child.children) part.geometry?.dispose();
       // The stone materials are shared. Do not dispose them.
       if (child.material && !child.userData.shared) {
         child.material.map?.dispose();

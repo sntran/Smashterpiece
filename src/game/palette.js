@@ -27,13 +27,43 @@ export function noise3(x, y, z, seed = 0) {
 }
 
 export const STONE_LOOKS = {
+  sand: { swatch: '#f7d99a', dust: [1.0, 0.93, 0.74] },
   sandstone: { swatch: '#f4b860', dust: [1.0, 0.86, 0.62] },
   marble: { swatch: '#f4f1fb', dust: [1.0, 1.0, 1.0] },
   granite: { swatch: '#9d8f99', dust: [0.85, 0.82, 0.86] },
+  glass: { swatch: '#bdefff', dust: [0.9, 1.0, 1.0] },
 };
+
+// These stones let the light through.
+export function isClear(stone) {
+  return stone === 'glass';
+}
 
 const PEDESTAL_A = [0.56, 0.36, 0.95];
 const PEDESTAL_B = [0.68, 0.52, 1.0];
+
+function sand(x, y, z, out) {
+  const r = hash3(x, y, z, 9);
+  const n = (hash3(x, y, z, 10) - 0.5) * 0.08;
+  if (r < 0.015) {
+    // A small shell.
+    out[0] = 1.0; out[1] = 0.78; out[2] = 0.82;
+  } else if (r < 0.08) {
+    out[0] = 0.88 + n; out[1] = 0.72 + n; out[2] = 0.5 + n;
+  } else {
+    out[0] = 0.99 + n; out[1] = 0.87 + n; out[2] = 0.62 + n;
+  }
+}
+
+function glass(x, y, z, out) {
+  const n = noise3(x * 0.2, y * 0.2, z * 0.2, 11) * 0.12;
+  if (hash3(x, y, z, 12) < 0.04) {
+    // A small air bubble.
+    out[0] = 0.95; out[1] = 1.0; out[2] = 1.0;
+  } else {
+    out[0] = 0.62 + n; out[1] = 0.9 + n * 0.5; out[2] = 1.0;
+  }
+}
 
 function sandstone(x, y, z, out) {
   const wave = y * 0.9 + noise3(x * 0.12, y * 0.2, z * 0.12, 3) * 3.5;
@@ -77,7 +107,7 @@ function granite(x, y, z, out) {
   }
 }
 
-const PAINTERS = { sandstone, marble, granite };
+const PAINTERS = { sand, sandstone, marble, granite, glass };
 const cache = new Map();
 
 // Return a Float32Array with 3 color values for each cell of a grid.

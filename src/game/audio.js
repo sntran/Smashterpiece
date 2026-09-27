@@ -2,6 +2,8 @@
 // needs it. The game does not load sound files.
 
 const STONE_VOICE = {
+  sand: { pitch: 0.6, bright: 700 },
+  glass: { pitch: 1.9, bright: 6500 },
   sandstone: { pitch: 0.8, bright: 1300 },
   marble: { pitch: 1.1, bright: 2600 },
   granite: { pitch: 1.35, bright: 3800 },
@@ -105,6 +107,25 @@ export class Sounds {
     this.tone({ type: 'triangle', f0: 560 * v.pitch * r, f1: 250 * v.pitch * r, dur: 0.13, gain: 0.3 });
     if (amount > 40) this.noise({ at: 0.03, dur: 0.45, gain: 0.35, f0: 500, f1: 120 });
     if (stone === 'granite') this.tone({ f0: 2100 * r, dur: 0.3, gain: 0.06 });
+    if (stone === 'glass' && amount > 0) this.shatter(amount);
+    if (stone === 'sand') this.pour(0.5);
+  }
+
+  // Glass breaks: a crash and many small bells.
+  shatter(amount) {
+    if (!this.ready) return;
+    this.noise({ dur: 0.35, gain: 0.35, type: 'highpass', f0: 3000, f1: 6000 });
+    const bells = Math.min(10, 3 + Math.floor(amount / 15));
+    for (let k = 0; k < bells; k++) {
+      const f = 2500 + Math.random() * 3500;
+      this.tone({ f0: f, dur: 0.25 + Math.random() * 0.3, gain: 0.07, at: Math.random() * 0.35 });
+    }
+  }
+
+  // Sand pours down.
+  pour(length) {
+    if (!this.ready) return;
+    this.noise({ dur: length, gain: 0.22, type: 'bandpass', f0: 2500, f1: 1200, q: 0.8, attack: 0.03 });
   }
 
   chisel(stone) {
@@ -115,6 +136,8 @@ export class Sounds {
     this.tone({ f0: base * 2.76, dur: 0.25, gain: 0.1 });
     this.tone({ f0: base * 5.4, dur: 0.14, gain: 0.06 });
     this.noise({ dur: 0.035, gain: 0.45, type: 'highpass', f0: 3500 });
+    if (stone === 'glass') this.shatter(5);
+    if (stone === 'sand') this.pour(0.3);
   }
 
   file(stone) {

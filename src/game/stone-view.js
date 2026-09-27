@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { buildMesh } from '../core/mesher.js';
 import { PEDESTAL, EMPTY } from '../core/grid.js';
-import { stoneColors, hash3 } from './palette.js';
+import { stoneColors, hash3, isClear } from './palette.js';
 import { stoneAtlas, toonGradient, ATLAS_TILES } from './textures.js';
 
 export const CHUNK = 8;
@@ -24,15 +24,36 @@ export function linearColors(stone, size) {
 }
 
 const materials = new Map();
+
+// The material of the stone. Glass is half clear, and the player can see
+// its inner faces.
 export function stoneMaterial(stone) {
   if (!materials.has(stone)) {
+    const clear = isClear(stone);
     materials.set(stone, new THREE.MeshToonMaterial({
+      map: stoneAtlas(stone),
+      gradientMap: toonGradient(),
+      vertexColors: true,
+      transparent: clear,
+      opacity: clear ? 0.55 : 1,
+      depthWrite: !clear,
+      side: clear ? THREE.DoubleSide : THREE.FrontSide,
+    }));
+  }
+  return materials.get(stone);
+}
+
+// The pedestal is never clear.
+const pedestalMaterials = new Map();
+function pedestalMaterial(stone) {
+  if (!pedestalMaterials.has(stone)) {
+    pedestalMaterials.set(stone, new THREE.MeshToonMaterial({
       map: stoneAtlas(stone),
       gradientMap: toonGradient(),
       vertexColors: true,
     }));
   }
-  return materials.get(stone);
+  return pedestalMaterials.get(stone);
 }
 
 export function geometryFrom(data) {
@@ -75,6 +96,35 @@ export function voxelMeshOptions({ valueAt, size, stone, hardness, ghostMask = n
   };
 }
 
+// Make the meshes for the voxels in a box. For a clear stone, the
+// pedestal is a separate solid mesh, so that it stays solid.
+//   box  { x0, y0, z0, x1, y1, z1 } (x1, y1, z1 are not included)
+export function buildVoxelMeshes({ box, valueAt, size, stone, hardness, ghostMask = null }) {
+  const options = voxelMeshOptions({ valueAt, size, stone, hardness, ghostMask });
+  const meshes = [];
+  const add = (data, material) => {
+    if (data.faces === 0) return;
+    const mesh = new THREE.Mesh(geometryFrom(data), material);
+    mesh.matrixAutoUpdate = false;
+    meshes.push(mesh);
+  };
+  if (!isClear(stone)) {
+    add(buildMesh({ ...box, ...options }), stoneMaterial(stone));
+    return meshes;
+  }
+  add(buildMesh({
+    ...box,
+    ...options,
+    solid: (x, y, z) => valueAt(x, y, z) === PEDESTAL,
+  }), pedestalMaterial(stone));
+  add(buildMesh({
+    ...box,
+    ...options,
+    skipFace: (x, y, z) => valueAt(x, y, z) === PEDESTAL,
+  }), stoneMaterial(stone));
+  return meshes;
+}
+
 export class StoneView {
   constructor() {
     // The root is at the middle of the base of the stone. The game scales
@@ -100,27 +150,22 @@ export class StoneView {
     this.tint = ghost ? ghost.mask : null;
     const half = grid.size / 2;
     this.inner.position.set(-half, 0, -half);
-    this.options = voxelMeshOptions({
-      valueAt: (x, y, z) => grid.get(x, y, z),
-      size: grid.size,
-      stone,
-      hardness,
-      ghostMask: this.tint,
-    });
-    this.material = stoneMaterial(stone);
+    this.valueAt = (x, y, z) => grid.get(x, y, z);
     const n = Math.ceil(grid.size / CHUNK);
     for (let cz = 0; cz < n; cz++) {
       for (let cy = 0; cy < n; cy++) {
         for (let cx = 0; cx < n; cx++) this.buildChunk(cx, cy, cz);
       }
     }
-    if (ghost) this.makeGhost(ghost);
+    if (ghost) this.makeGhost(ghost, isClear(stone) ? 0xff6ad5 : 0x5ff0ff);
   }
 
   clear() {
-    for (const mesh of this.chunks.values()) {
-      this.inner.remove(mesh);
-      mesh.geometry.dispose();
+    for (const meshes of this.chunks.values()) {
+      for (const mesh of meshes) {
+        this.inner.remove(mesh);
+        mesh.geometry.dispose();
+      }
     }
     this.chunks.clear();
     this.dirty.clear();
@@ -134,25 +179,28 @@ export class StoneView {
 
   buildChunk(cx, cy, cz) {
     const key = `${cx},${cy},${cz}`;
-    const old = this.chunks.get(key);
-    if (old) {
-      this.inner.remove(old);
-      old.geometry.dispose();
-      this.chunks.delete(key);
+    for (const mesh of this.chunks.get(key) ?? []) {
+      this.inner.remove(mesh);
+      mesh.geometry.dispose();
     }
+    this.chunks.delete(key);
     const size = this.grid.size;
-    const data = buildMesh({
-      x0: cx * CHUNK, y0: cy * CHUNK, z0: cz * CHUNK,
-      x1: Math.min(size, (cx + 1) * CHUNK),
-      y1: Math.min(size, (cy + 1) * CHUNK),
-      z1: Math.min(size, (cz + 1) * CHUNK),
-      ...this.options,
+    const meshes = buildVoxelMeshes({
+      box: {
+        x0: cx * CHUNK, y0: cy * CHUNK, z0: cz * CHUNK,
+        x1: Math.min(size, (cx + 1) * CHUNK),
+        y1: Math.min(size, (cy + 1) * CHUNK),
+        z1: Math.min(size, (cz + 1) * CHUNK),
+      },
+      valueAt: this.valueAt,
+      size,
+      stone: this.stone,
+      hardness: this.hardness,
+      ghostMask: this.tint,
     });
-    if (data.faces === 0) return;
-    const mesh = new THREE.Mesh(geometryFrom(data), this.material);
-    mesh.matrixAutoUpdate = false;
-    this.inner.add(mesh);
-    this.chunks.set(key, mesh);
+    if (meshes.length === 0) return;
+    for (const mesh of meshes) this.inner.add(mesh);
+    this.chunks.set(key, meshes);
   }
 
   // Mark the chunks near the changed cells. A change also changes the
@@ -191,7 +239,7 @@ export class StoneView {
     this.dirty.clear();
   }
 
-  makeGhost(ghost) {
+  makeGhost(ghost, color) {
     const size = ghost.size;
     const mask = ghost.mask;
     const data = buildMesh({
@@ -202,7 +250,7 @@ export class StoneView {
       ao: true,
     });
     const material = new THREE.MeshBasicMaterial({
-      color: 0x5ff0ff,
+      color,
       vertexColors: true,
       transparent: true,
       opacity: 0.4,

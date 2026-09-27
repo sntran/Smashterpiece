@@ -33,7 +33,8 @@ function drawGrain(ctx, x0, y0, stone, rand) {
     const band = stone === 'sandstone' ? Math.sin(y * 0.35 + rand() * 0.2) * 7 : 0;
     for (let x = 0; x < TILE; x++) {
       const k = (y * TILE + x) * 4;
-      const grain = (rand() - 0.5) * (stone === 'marble' ? 8 : 22);
+      const amount = stone === 'marble' || stone === 'glass' ? 6 : stone === 'sand' ? 40 : 22;
+      const grain = (rand() - 0.5) * amount;
       const v = 238 + band + grain;
       d[k] = v;
       d[k + 1] = v;
@@ -52,6 +53,27 @@ function drawGrain(ctx, x0, y0, stone, rand) {
       ctx.fillStyle = g;
       ctx.fillRect(x0, y0, TILE, TILE);
     }
+  }
+  if (stone === 'sand') {
+    for (let n = 0; n < 90; n++) {
+      ctx.fillStyle = rand() < 0.5 ? 'rgba(150,110,60,0.35)' : 'rgba(255,255,255,0.6)';
+      ctx.fillRect(x0 + rand() * TILE, y0 + rand() * TILE, 3, 3);
+    }
+  }
+  if (stone === 'glass') {
+    // Shiny lines.
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.moveTo(x0 + 28, y0 + 60);
+    ctx.lineTo(x0 + 60, y0 + 28);
+    ctx.stroke();
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(x0 + 34, y0 + 84);
+    ctx.lineTo(x0 + 84, y0 + 34);
+    ctx.stroke();
   }
   if (stone === 'granite') {
     const colors = ['#4b4652', '#ffffff', '#ffb8c6', '#2d2a33'];

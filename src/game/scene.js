@@ -68,9 +68,11 @@ export function createWorkshop() {
   for (let k = 0; k < 7; k++) {
     const cloud = makeCloud();
     const angle = (k / 7) * Math.PI * 2 + Math.random() * 0.4;
-    const r = 120 + Math.random() * 30;
-    cloud.position.set(Math.cos(angle) * r, 45 + Math.random() * 35, Math.sin(angle) * r);
-    cloud.scale.setScalar(1 + Math.random() * 0.8);
+    // The clouds are far away, so that they never come between the
+    // camera and the stone.
+    const r = 280 + Math.random() * 60;
+    cloud.position.set(Math.cos(angle) * r, 90 + Math.random() * 70, Math.sin(angle) * r);
+    cloud.scale.setScalar(2 + Math.random() * 1.2);
     cloud.userData.angle = angle;
     cloud.userData.radius = r;
     scene.add(cloud);
@@ -78,8 +80,8 @@ export function createWorkshop() {
   }
 
   const sun = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunTexture(), fog: false }));
-  sun.scale.set(34, 34, 1);
-  sun.position.set(-70, 95, -120);
+  sun.scale.set(70, 70, 1);
+  sun.position.set(-160, 200, -280);
   scene.add(sun);
 
   const update = (time) => {

@@ -19,9 +19,14 @@ The game does not use words. Each button has a large picture.
    face, or rocket.
 3. Select a stone. The number of hammers on the button shows the number
    of hits that each piece of stone needs:
+   - Sand (light yellow): 1 hit. Sand cannot hang in the air. Thin parts
+     with nothing below them crumble and pour down.
    - Sandstone (orange): 1 hit.
    - Marble (white): 2 hits. Small cracks show after the first hit.
    - Granite (gray): 3 hits.
+   - Glass (light blue): 2 hits. You can see through glass. It cracks
+     after the first hit and breaks into shiny pieces. In glass, the
+     ghost shape is pink.
 4. Select a tool at the bottom of the screen:
    - **Hammer**: removes a large ball of stone.
    - **Point chisel**: removes a small ball of stone.
@@ -33,6 +38,11 @@ The game does not use words. Each button has a large picture.
 
 A tap that moves less than 8 pixels is a hit. A larger move turns the
 camera.
+
+The game works on phones, tablets and computers. On a phone in
+portrait, the buttons are in two rows at the top. On a phone in
+landscape, the tools are on the left side. When you turn the phone, the
+camera moves to show all of the stone.
 
 When a piece of stone does not touch the pedestal any more, it falls
 and breaks.
@@ -129,7 +139,8 @@ The modules in `src/core/` are:
 | Module | Function |
 | --- | --- |
 | `grid.js` | The 32 x 32 x 32 voxel grid and the pedestal. |
-| `stones.js` | The hardness of each stone. |
+| `stones.js` | The hardness of each stone, and which stone crumbles. |
+| `sand.js` | The crumble rule for sand. |
 | `carve.js` | The voxel removal for each tool. |
 | `connect.js` | The connection check. It finds the pieces that fall. |
 | `shapes.js` | The ghost shapes for the challenge mode. |
