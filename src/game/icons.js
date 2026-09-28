@@ -77,6 +77,36 @@ export const ICONS = {
   challenge: svg(`
     <path d="M12 58 V30 A20 20 0 0 1 52 30 V58 L45 52 L38 58 L32 52 L26 58 L19 52 Z" fill="#aef3ff"/>
     <path d="M32 18 l4 8 l9 1 l-7 6 l2 9 l-8 -5 l-8 5 l2 -9 l-7 -6 l9 -1 Z" fill="#ffd35c" stroke-width="2.5"/>`),
+  chest: svg(`
+    <path d="M8 28 Q8 12 32 12 Q56 12 56 28 Z" fill="#ff9f43"/>
+    <rect x="8" y="28" width="48" height="26" rx="3" fill="#c96f2d"/>
+    <rect x="8" y="26" width="48" height="6" fill="#ffd35c"/>
+    <rect x="27" y="24" width="10" height="14" rx="2" fill="#ffd35c"/>
+    <path d="M14 14 l2 -6 l2 6 M46 10 l2 -6 l2 6" stroke="#ffd35c" stroke-width="3"/>`),
+  share: svg(`
+    <path d="M14 30 V54 H50 V30" fill="none" stroke-width="6"/>
+    <path d="M32 40 V12 M20 22 L32 8 L44 22" fill="none" stroke="#fff" stroke-width="7"/>`),
+  link: svg(`
+    <rect x="6" y="22" width="30" height="20" rx="10" fill="none" stroke-width="7" transform="rotate(-35 21 32)"/>
+    <rect x="28" y="22" width="30" height="20" rx="10" fill="none" stroke-width="7" transform="rotate(-35 43 32)"/>`),
+  addMuseum: svg(`
+    <path d="M6 22 L32 8 L58 22 Z" fill="#b388ff"/>
+    <rect x="8" y="22" width="48" height="5" fill="#fff4d6"/>
+    <rect x="12" y="27" width="7" height="20" fill="#fff4d6"/>
+    <rect x="28.5" y="27" width="7" height="20" fill="#fff4d6"/>
+    <rect x="45" y="27" width="7" height="20" fill="#fff4d6"/>
+    <rect x="6" y="47" width="52" height="8" fill="#b388ff"/>
+    <circle cx="50" cy="48" r="13" fill="#4ade80"/>
+    <path d="M50 41 V55 M43 48 H57" stroke="#fff" stroke-width="5"/>`),
+  gear: svg(`
+    <path d="M28 4 H36 L38 12 L44 15 L51 10 L56 15 L51 22 L54 28 L62 30 V36 L54 38 L51 44 L56 51 L51 56 L44 51 L38 54 L36 62 H28 L26 54 L20 51 L13 56 L8 51 L13 44 L10 38 L2 36 V30 L10 28 L13 22 L8 15 L13 10 L20 15 L26 12 Z" fill="#c9c3d6"/>
+    <circle cx="32" cy="33" r="10" fill="#fff"/>`),
+  download: svg(`
+    <rect x="8" y="44" width="48" height="12" rx="4" fill="#4cc9f0"/>
+    <path d="M24 6 H40 V26 H50 L32 44 L14 26 H24 Z" fill="#4ade80"/>`),
+  upload: svg(`
+    <rect x="8" y="44" width="48" height="12" rx="4" fill="#4cc9f0"/>
+    <path d="M24 42 H40 V24 H50 L32 6 L14 24 H24 Z" fill="#ffd35c"/>`),
   question: svg(`<circle cx="32" cy="32" r="26" fill="#ffd35c"/><path d="M24 24 A8 8 0 1 1 34 32 Q32 34 32 38" fill="none" stroke-width="6"/><circle cx="32" cy="48" r="3" fill="${LINE}"/>`),
 };
 

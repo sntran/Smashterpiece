@@ -4,6 +4,10 @@
 const STONE_VOICE = {
   sand: { pitch: 0.6, bright: 700 },
   glass: { pitch: 1.9, bright: 6500 },
+  ice: { pitch: 1.6, bright: 5000 },
+  wood: { pitch: 0.9, bright: 1600 },
+  chocolate: { pitch: 0.85, bright: 2200 },
+  cheese: { pitch: 0.7, bright: 900 },
   sandstone: { pitch: 0.8, bright: 1300 },
   marble: { pitch: 1.1, bright: 2600 },
   granite: { pitch: 1.35, bright: 3800 },
@@ -107,8 +111,34 @@ export class Sounds {
     this.tone({ type: 'triangle', f0: 560 * v.pitch * r, f1: 250 * v.pitch * r, dur: 0.13, gain: 0.3 });
     if (amount > 40) this.noise({ at: 0.03, dur: 0.45, gain: 0.35, f0: 500, f1: 120 });
     if (stone === 'granite') this.tone({ f0: 2100 * r, dur: 0.3, gain: 0.06 });
+    this.extra(stone, amount, 1);
+  }
+
+  // The special sound of each material.
+  extra(stone, amount, size) {
     if (stone === 'glass' && amount > 0) this.shatter(amount);
-    if (stone === 'sand') this.pour(0.5);
+    if (stone === 'ice' && amount > 0) {
+      this.noise({ dur: 0.18 * size, gain: 0.3, type: 'highpass', f0: 2500 });
+      this.shatter(Math.min(amount, 10));
+    }
+    if (stone === 'sand') this.pour(0.5 * size);
+    if (stone === 'wood') {
+      // A hollow knock.
+      this.tone({ type: 'triangle', f0: 330 * vary(0.1), f1: 250, dur: 0.12, gain: 0.35 });
+      this.noise({ dur: 0.1, gain: 0.3, type: 'bandpass', f0: 900, q: 4 });
+    }
+    if (stone === 'chocolate') {
+      // A snap.
+      this.noise({ dur: 0.03, gain: 0.5, type: 'highpass', f0: 1800 });
+      this.noise({ at: 0.04, dur: 0.05, gain: 0.3, type: 'bandpass', f0: 1200, q: 2 });
+    }
+    if (stone === 'cheese' && Math.random() < 0.3) this.squeak();
+  }
+
+  // A small mouse lives in the cheese.
+  squeak() {
+    this.tone({ f0: 2200, f1: 3200, dur: 0.08, gain: 0.12, at: 0.15 });
+    this.tone({ f0: 2400, f1: 3400, dur: 0.08, gain: 0.12, at: 0.27 });
   }
 
   // Glass breaks: a crash and many small bells.
@@ -136,8 +166,7 @@ export class Sounds {
     this.tone({ f0: base * 2.76, dur: 0.25, gain: 0.1 });
     this.tone({ f0: base * 5.4, dur: 0.14, gain: 0.06 });
     this.noise({ dur: 0.035, gain: 0.45, type: 'highpass', f0: 3500 });
-    if (stone === 'glass') this.shatter(5);
-    if (stone === 'sand') this.pour(0.3);
+    this.extra(stone, 5, 0.6);
   }
 
   file(stone) {
@@ -151,6 +180,20 @@ export class Sounds {
       });
     }
     this.noise({ dur: 0.24, gain: 0.08, type: 'bandpass', f0: 700, q: 1.5 });
+    if (stone === 'cheese' && Math.random() < 0.3) this.squeak();
+  }
+
+  // A treasure comes out of the stone.
+  treasure(rarity) {
+    if (!this.ready) return;
+    const notes = rarity === 'super' ? [523, 659, 784, 1047, 1319, 1568] : rarity === 'rare' ? [587, 740, 880, 1175] : [659, 831, 988];
+    notes.forEach((f, k) => {
+      this.tone({ type: 'triangle', f0: f, dur: 0.35, gain: 0.2, at: k * 0.08 });
+      this.tone({ f0: f * 2, dur: 0.25, gain: 0.06, at: k * 0.08 });
+    });
+    for (let k = 0; k < 6; k++) {
+      this.tone({ f0: 2500 + Math.random() * 2500, dur: 0.12, gain: 0.05, at: 0.2 + Math.random() * 0.5 });
+    }
   }
 
   // Small cracks: marble and granite make this sound when they do not break.

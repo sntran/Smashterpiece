@@ -32,11 +32,15 @@ export const STONE_LOOKS = {
   marble: { swatch: '#f4f1fb', dust: [1.0, 1.0, 1.0] },
   granite: { swatch: '#9d8f99', dust: [0.85, 0.82, 0.86] },
   glass: { swatch: '#bdefff', dust: [0.9, 1.0, 1.0] },
+  wood: { swatch: '#c98a4b', dust: [0.95, 0.8, 0.6] },
+  ice: { swatch: '#d9f4ff', dust: [1.0, 1.0, 1.0] },
+  chocolate: { swatch: '#7a4a2a', dust: [0.62, 0.42, 0.3] },
+  cheese: { swatch: '#ffd34d', dust: [1.0, 0.95, 0.7] },
 };
 
 // These stones let the light through.
 export function isClear(stone) {
-  return stone === 'glass';
+  return stone === 'glass' || stone === 'ice';
 }
 
 const PEDESTAL_A = [0.56, 0.36, 0.95];
@@ -63,6 +67,45 @@ function glass(x, y, z, out) {
   } else {
     out[0] = 0.62 + n; out[1] = 0.9 + n * 0.5; out[2] = 1.0;
   }
+}
+
+function wood(x, y, z, out) {
+  // Rings around the middle of the trunk, and lines along the grain.
+  const r = Math.hypot(x - 15.5, z - 15.5) + noise3(x * 0.15, y * 0.05, z * 0.15, 13) * 2.5;
+  const ring = 0.5 + 0.5 * Math.sin(r * 1.3);
+  const grain = noise3(x * 0.6, y * 0.08, z * 0.6, 14) * 0.08;
+  out[0] = 0.72 + ring * 0.18 + grain;
+  out[1] = 0.46 + ring * 0.16 + grain;
+  out[2] = 0.26 + ring * 0.1 + grain * 0.5;
+}
+
+function ice(x, y, z, out) {
+  const frost = noise3(x * 0.25, y * 0.25, z * 0.25, 15);
+  if (frost > 0.62) {
+    out[0] = 0.95; out[1] = 0.98; out[2] = 1.0;
+  } else {
+    out[0] = 0.72 + frost * 0.1; out[1] = 0.9 + frost * 0.05; out[2] = 1.0;
+  }
+}
+
+function chocolate(x, y, z, out) {
+  const r = hash3(x, y, z, 16);
+  if (r < 0.03) {
+    // A small white chocolate chip.
+    out[0] = 0.98; out[1] = 0.93; out[2] = 0.82;
+    return;
+  }
+  const swirl = noise3(x * 0.18, y * 0.18, z * 0.18, 17);
+  out[0] = 0.42 + swirl * 0.14;
+  out[1] = 0.25 + swirl * 0.08;
+  out[2] = 0.15 + swirl * 0.05;
+}
+
+function cheese(x, y, z, out) {
+  const n = (hash3(x, y, z, 18) - 0.5) * 0.05;
+  out[0] = 1.0;
+  out[1] = 0.82 + n;
+  out[2] = 0.32 + n;
 }
 
 function sandstone(x, y, z, out) {
@@ -107,7 +150,7 @@ function granite(x, y, z, out) {
   }
 }
 
-const PAINTERS = { sand, sandstone, marble, granite, glass };
+const PAINTERS = { sand, sandstone, marble, granite, glass, wood, ice, chocolate, cheese };
 const cache = new Map();
 
 // Return a Float32Array with 3 color values for each cell of a grid.

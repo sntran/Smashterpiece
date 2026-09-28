@@ -5,7 +5,10 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 import { createBlock, PEDESTAL, EMPTY } from '../core/grid.js';
-import { hardnessOf, crumblesOf, STONE_NAMES } from '../core/stones.js';
+import { hardnessOf, crumblesOf, hasHoles, STONE_NAMES } from '../core/stones.js';
+import { addHoles } from '../core/holes.js';
+import { makeRandom, randomInt } from '../core/random.js';
+import { TREASURES, placeTreasures, collectUncovered, nearestOpening, loadCollection, addToCollection } from '../core/treasures.js';
 import { crumbleSand } from '../core/sand.js';
 import { applyHit, planHit } from '../core/carve.js';
 import { removeFloating } from '../core/connect.js';
@@ -13,7 +16,10 @@ import { raycastGrid } from '../core/raycast.js';
 import { History } from '../core/history.js';
 import { buildGhost, SHAPE_NAMES } from '../core/shapes.js';
 import { matchScore, countOutside, FINISH_LIMIT, STAR_LIMITS } from '../core/score.js';
-import { addStatue, loadMuseum, removeStatue } from '../core/codec.js';
+import { addStatue, loadMuseum, removeStatue, decodeStatue, encodeStatue } from '../core/codec.js';
+import { saveProgress, loadProgress, clearProgress, makeBackup, parseBackup, mergeBackup } from '../core/save.js';
+import { encodeShare, decodeShare, shareTextFrom, shareId, SHARE_PREFIX } from '../core/share.js';
+import { makeQr } from '../core/qr.js';
 
 import { createRenderer, createWorkshop, floorAt } from './scene.js';
 import { StoneView, linearColors } from './stone-view.js';
@@ -23,13 +29,24 @@ import { ToolView } from './tools-view.js';
 import { MuseumView } from './museum-view.js';
 import { Sounds } from './audio.js';
 import { Confetti } from './confetti.js';
+import { TreasureView, TREASURE_LOOKS } from './treasures-view.js';
 import { ICONS, SHAPE_EMOJI, starSvg } from './icons.js';
-import { STONE_LOOKS, stoneColors } from './palette.js';
+import { STONE_LOOKS, stoneColors, isClear } from './palette.js';
 import { drawStoneSwatch } from './textures.js';
 
 // A pointer that moves less than this number of pixels makes a hit.
 const TAP_LIMIT = 8;
 const MUTE_KEY = 'smashterpiece.muted';
+// The time between two sparkles that show where a treasure is.
+const HINT_TIME = 1.2;
+// The time from the last hit to the automatic save, in milliseconds.
+const AUTOSAVE_DELAY = 800;
+const RARITY = Object.fromEntries(TREASURES.map((t) => [t.id, t.rarity]));
+const STONE_LABELS = {
+  sand: 'Sand', sandstone: 'Sandstone', chocolate: 'Chocolate', cheese: 'Cheese', ice: 'Ice',
+  wood: 'Wood', marble: 'Marble', glass: 'Glass', granite: 'Granite',
+};
+const SHAPE_LABELS = { star: 'Star', fish: 'Fish', heart: 'Heart', duck: 'Duck', smiley: 'Smiley', rocket: 'Rocket' };
 const WORKSHOP_TARGET = new THREE.Vector3(0, 13, 0);
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -79,7 +96,8 @@ class Game {
       solidAt: (p) => this.solidAtWorld(p),
       colorOf: (i) => this.colorOf(i),
     });
-    workshop.scene.add(this.stoneView.root, this.toolView.group, this.particles.group, this.pieces.group);
+    this.treasureView = new TreasureView();
+    workshop.scene.add(this.stoneView.root, this.toolView.group, this.particles.group, this.pieces.group, this.treasureView.group);
     this.museum = new MuseumView();
     this.confetti = new Confetti($('#confetti'));
 
@@ -94,6 +112,8 @@ class Game {
     this.unsaved = false;
     this.lastScore = null;
     this.ghostVisible = true;
+    this.treasures = [];
+    this.hintClock = 0;
 
     this.pointers = new Map();
     this.tap = null;
@@ -106,6 +126,8 @@ class Game {
     this.clock = new THREE.Clock();
 
     this.sounds.setMuted(this.storage.getItem(MUTE_KEY) === '1');
+    // Ask the browser to keep the saved data, also when space is low.
+    navigator.storage?.persist?.().catch(() => undefined);
     this.buildUi();
     this.bindInput();
     this.onResize();
@@ -123,8 +145,12 @@ class Game {
         free: 'free', challenge: 'challenge', museum: 'museum', back: 'left', home: 'home',
         undo: 'undo', save: 'museum', new: 'newStone', ghost: 'ghost', finish: 'trophy',
         keep: 'play', prev: 'left', next: 'right', delete: 'trash', yes: 'check', no: 'cross',
+        treasures: 'chest', continue: 'play', parents: 'gear', export: 'download', import: 'upload',
+        close: 'cross', 'close-share': 'cross', share: 'share', 'send-link': 'share', 'copy-link': 'link',
+        'add-shared': 'addMuseum',
       }[el.dataset.action];
-      if (icon) el.innerHTML = ICONS[icon];
+      if (icon) el.innerHTML = ICONS[icon] + el.innerHTML;
+      if (el.dataset.label) el.insertAdjacentHTML('beforeend', `<span class="label">${el.dataset.label}</span>`);
     }
     for (const el of $$('[data-icon]')) el.innerHTML = ICONS[el.dataset.icon];
     for (const el of $$('[data-tool]')) el.innerHTML = ICONS[el.dataset.tool];
@@ -137,14 +163,14 @@ class Game {
       button.className = `tile ${shapeColors[k]}`;
       button.dataset.shape = name;
       button.setAttribute('aria-label', name);
-      button.innerHTML = `<span class="emoji">${SHAPE_EMOJI[name]}</span>`;
+      button.innerHTML = `<span class="emoji">${SHAPE_EMOJI[name]}</span><span class="label">${SHAPE_LABELS[name]}</span>`;
       shapeTiles.appendChild(button);
     });
 
     const stoneTiles = $('#stone-tiles');
     for (const name of STONE_NAMES) {
       const button = document.createElement('button');
-      button.className = 'tile';
+      button.className = 'tile stone';
       button.style.background = STONE_LOOKS[name].swatch;
       button.dataset.stone = name;
       button.setAttribute('aria-label', name);
@@ -159,7 +185,10 @@ class Game {
       const hits = document.createElement('div');
       hits.className = 'hits';
       hits.innerHTML = ICONS.hammer.repeat(hardnessOf(name));
-      button.append(canvas, hits);
+      const label = document.createElement('span');
+      label.className = 'label';
+      label.textContent = STONE_LABELS[name];
+      button.append(canvas, label, hits);
       stoneTiles.appendChild(button);
     }
 
@@ -177,15 +206,24 @@ class Game {
       resultStars.appendChild(star);
     }
 
+    this.updateTreasureBadge();
+    this.updateContinue();
+    $('#import-file').addEventListener('change', (e) => this.importBackup(e.target));
     document.addEventListener('click', (e) => this.onClick(e));
+    // Save the game when the player leaves the page or the app.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') this.saveNow();
+    });
+    window.addEventListener('pagehide', () => this.saveNow());
     document.addEventListener('keydown', (e) => this.onKey(e));
   }
 
   show(name) {
     this.screen = name;
     for (const el of $$('.screen')) el.classList.toggle('show', el.id === name);
+    $('#museum').classList.remove('shared');
     const inWorkshop = name !== 'museum';
-    this.controls.autoRotate = name === 'menu' || name === 'shapes' || name === 'stones';
+    this.controls.autoRotate = ['menu', 'shapes', 'stones', 'treasures'].includes(name);
     this.controls.autoRotateSpeed = 0.8;
     this.controls.enabled = name === 'play' || name === 'museum';
     if (inWorkshop) {
@@ -202,7 +240,7 @@ class Game {
     this.hideAim();
   }
 
-  onClick(e) {
+  async onClick(e) {
     const button = e.target.closest('button');
     if (!button) return;
     this.sounds.unlock();
@@ -213,6 +251,12 @@ class Game {
       this.mode = 'challenge';
       return this.show('stones');
     }
+    if (button.dataset.treasure) {
+      button.classList.remove('wiggle');
+      void button.offsetWidth;
+      button.classList.add('wiggle');
+      return this.sounds.treasure(RARITY[button.dataset.treasure]);
+    }
     if (button.dataset.stone) {
       this.sounds.select();
       return this.startGame(button.dataset.stone);
@@ -222,13 +266,38 @@ class Game {
     if (action !== 'sound') this.sounds.pop();
     switch (action) {
       case 'free':
+        if (!(await this.confirmNewGame())) return undefined;
         this.mode = 'free';
         this.shape = null;
         return this.show('stones');
       case 'challenge':
+        if (!(await this.confirmNewGame())) return undefined;
         return this.show('shapes');
+      case 'continue':
+        return this.resumeGame();
+      case 'parents':
+        $('#backup-result').textContent = '';
+        return $('#backup').classList.add('show');
+      case 'close':
+        return $('#backup').classList.remove('show');
+      case 'share':
+        return this.shareStatue();
+      case 'close-share':
+        return $('#share').classList.remove('show');
+      case 'send-link':
+        return this.sendLink();
+      case 'copy-link':
+        return this.copyLink();
+      case 'add-shared':
+        return this.addShared();
+      case 'export':
+        return this.exportBackup();
+      case 'import':
+        return $('#import-file').click();
       case 'museum':
         return this.openMuseum();
+      case 'treasures':
+        return this.openTreasures();
       case 'back':
         return this.show(this.screen === 'stones' && this.mode === 'challenge' ? 'shapes' : 'menu');
       case 'home':
@@ -345,7 +414,23 @@ class Game {
     this.hardness = hardness;
     this.ghost = this.mode === 'challenge' ? buildGhost(this.shape) : null;
     this.grid = createBlock({ hardness, box: this.ghost ? this.ghost.box : null });
+    const rand = makeRandom(Date.now());
+    const avoidMask = this.ghost ? this.ghost.mask : null;
+    if (hasHoles(stone)) {
+      addHoles(this.grid, { count: randomInt(rand, 10, 16), rand, avoidMask });
+      // A hole can cut off a small part. That part is not in the block.
+      removeFloating(this.grid);
+    }
+    this.treasures = placeTreasures(this.grid, {
+      count: randomInt(rand, 2, 3),
+      rand,
+      avoidMask,
+      collected: loadCollection(this.storage),
+    });
+    this.treasureView.clear();
     this.outsideStart = this.ghost ? countOutside(this.grid, this.ghost.mask) : 0;
+    this.playing = true;
+    clearProgress(this.storage);
     this.history.clear();
     this.pieces.clear();
     this.particles.clear();
@@ -363,17 +448,18 @@ class Game {
 
   async goHome() {
     $('#celebrate').classList.remove('show');
-    if (this.screen === 'play' && this.unsaved) {
-      if (!(await this.ask('home'))) return;
-    }
+    if (this.screen === 'play') this.saveNow();
+    this.updateContinue();
     this.pieces.clear();
+    this.particles.clear();
+    this.treasureView.clear();
     if (this.screen === 'museum') this.focusGoal = null;
     this.resetCamera();
     this.show('menu');
   }
 
   async newStone() {
-    if (this.unsaved && !(await this.ask('newStone'))) return;
+    if (this.history.canUndo() && !(await this.ask('newStone'))) return;
     this.show('stones');
   }
 
@@ -480,10 +566,12 @@ class Game {
     for (const piece of pieces) this.stoneView.markCells(piece.map((c) => c.index));
     this.stoneView.flush();
     for (const piece of pieces) this.pieces.add(piece, grid, this.stone, this.hardness);
+    for (const t of collectUncovered(grid, this.treasures)) this.findTreasure(t);
 
     this.effects(result, point, n, before);
     if (crumbled.length > 0) this.pourSand(crumbled);
     this.unsaved = true;
+    this.scheduleSave();
     this.updateButtons();
     this.updateScore();
     this.refreshAim();
@@ -505,8 +593,10 @@ class Game {
 
   effects(result, point, normal, before) {
     const { removed, cracked } = result;
-    // Sand makes small grains. Other stones make larger chips.
+    // Sand makes small grains. Wood makes thin shavings. Other stones make
+    // larger chips.
     const grain = this.stone === 'sand' ? 0.4 : 1;
+    const stretch = this.stone === 'wood' ? [1.9, 0.25, 0.7] : null;
     const xyz = [0, 0, 0];
     const dust = STONE_LOOKS[this.stone].dust;
     const tangent = new THREE.Vector3(normal.y, normal.z, normal.x);
@@ -530,7 +620,7 @@ class Game {
     if (this.tool === 'hammer') {
       const chips = removed.length > 0 ? Math.min(28, 8 + Math.floor(removed.length / 5)) : 4;
       for (const i of sample(removed.length ? removed : cracked, chips)) {
-        this.particles.chip(cellPoint(i), spray(rand(8, 18), 9, rand(4, 12)), rand(0.4, 0.95) * grain, this.colorOf(i));
+        this.particles.chip(cellPoint(i), spray(rand(8, 18), 9, rand(4, 12)), rand(0.4, 0.95) * grain, this.colorOf(i), undefined, stretch);
       }
       for (let k = 0; k < (removed.length ? 7 : 3); k++) {
         this.particles.puff(point, spray(rand(4, 9), 6, rand(0, 3)), rand(0.9, 2.1), dust);
@@ -540,7 +630,7 @@ class Game {
       this.shake = Math.max(this.shake, removed.length > 60 ? 0.6 : 0.35);
     } else if (this.tool === 'chisel') {
       for (const i of sample(removed.length ? removed : cracked, removed.length ? 7 : 3)) {
-        this.particles.chip(cellPoint(i), spray(rand(14, 24), 5, rand(2, 8)), rand(0.25, 0.45) * grain, this.colorOf(i));
+        this.particles.chip(cellPoint(i), spray(rand(14, 24), 5, rand(2, 8)), rand(0.25, 0.45) * grain, this.colorOf(i), undefined, stretch);
       }
       for (let k = 0; k < 7; k++) {
         this.particles.spark(point, spray(rand(10, 22), 12, rand(0, 8)), rand(0.25, 0.45), [1, 0.85, 0.3]);
@@ -560,7 +650,7 @@ class Game {
       }
       this.sounds.file(this.stone);
     }
-    if (this.stone === 'glass' && removed.length > 0) {
+    if (isClear(this.stone) && removed.length > 0) {
       // Glass breaks into shiny pieces.
       const shards = Math.min(24, 6 + Math.floor(removed.length / 6));
       for (const i of sample(removed, shards)) {
@@ -575,6 +665,201 @@ class Game {
     }
   }
 
+  // The player found a treasure. Keep it in the collection and show it.
+  findTreasure(t) {
+    let isNew = false;
+    try {
+      isNew = addToCollection(this.storage, t.id).isNew;
+    } catch {
+      // The storage is full. The player still sees the treasure.
+    }
+    const point = this.stoneView.toWorld(t.x + 0.5, t.y + 0.5, t.z + 0.5);
+    this.treasureView.reveal(point, t.id);
+    for (let k = 0; k < 14; k++) {
+      const vel = new THREE.Vector3((Math.random() - 0.5) * 18, 6 + Math.random() * 14, (Math.random() - 0.5) * 18);
+      this.particles.spark(point, vel, 0.3 + Math.random() * 0.4, [1, 0.85, 0.2], 0.6 + Math.random() * 0.4);
+    }
+    this.sounds.treasure(RARITY[t.id]);
+    const box = $('#found');
+    $('.found-emoji', box).textContent = TREASURE_LOOKS[t.id].emoji;
+    $('.found-name', box).textContent = TREASURE_LOOKS[t.id].name;
+    box.className = `found ${RARITY[t.id]}${isNew ? ' new' : ''}`;
+    void box.offsetWidth;
+    box.classList.add('go');
+    this.updateTreasureBadge();
+  }
+
+  // Show small sparkles near the treasures that are close to the air.
+  showHints(dt) {
+    this.hintClock += dt;
+    if (this.hintClock < HINT_TIME) return;
+    this.hintClock = 0;
+    for (const t of this.treasures) {
+      if (t.found) continue;
+      const open = nearestOpening(this.grid, t, 3);
+      if (!open) continue;
+      const point = this.stoneView.toWorld(open[0] + 0.5, open[1] + 0.5, open[2] + 0.5);
+      for (let k = 0; k < 3; k++) {
+        const vel = new THREE.Vector3((Math.random() - 0.5) * 3, 2 + Math.random() * 3, (Math.random() - 0.5) * 3);
+        this.particles.spark(point, vel, 0.25, [1, 0.9, 0.3], 0.7);
+      }
+    }
+  }
+
+  updateTreasureBadge() {
+    const count = Object.keys(loadCollection(this.storage)).length;
+    const badge = $('#treasure-badge');
+    badge.textContent = `${count}/${TREASURES.length}`;
+  }
+
+  openTreasures() {
+    const collection = loadCollection(this.storage);
+    const grid = $('#treasure-grid');
+    grid.innerHTML = '';
+    for (const t of TREASURES) {
+      const look = TREASURE_LOOKS[t.id];
+      const count = collection[t.id] ?? 0;
+      const card = document.createElement(count ? 'button' : 'div');
+      card.className = `treasure ${t.rarity}${count ? ' got' : ''}`;
+      if (count) {
+        card.dataset.treasure = t.id;
+        card.setAttribute('aria-label', look.name);
+      }
+      card.innerHTML = `<span class="t-emoji">${look.emoji}</span>`
+        + `<span class="t-name">${count ? look.name : '?'}</span>`
+        + (count > 1 ? `<span class="t-count">x${count}</span>` : '');
+      grid.appendChild(card);
+    }
+    $('#treasure-count').textContent = `${Object.keys(collection).length} / ${TREASURES.length}`;
+    this.show('treasures');
+  }
+
+  // ---------------------------------------------------------------- Save
+
+  scheduleSave() {
+    clearTimeout(this.saveTimer);
+    this.saveTimer = setTimeout(() => this.saveNow(), AUTOSAVE_DELAY);
+  }
+
+  // Save the game in progress at once.
+  saveNow() {
+    clearTimeout(this.saveTimer);
+    if (!this.playing || !this.grid) return;
+    try {
+      saveProgress(this.storage, {
+        mode: this.mode,
+        stone: this.stone,
+        shape: this.shape,
+        size: this.grid.size,
+        cells: this.grid.cells,
+        treasures: this.treasures,
+        outsideStart: this.outsideStart,
+        finished: !!this.finished,
+        saved: Date.now(),
+      });
+    } catch {
+      // The storage is full. The game continues without the save.
+    }
+  }
+
+  // Show the Continue button when there is a saved game.
+  updateContinue() {
+    const saved = loadProgress(this.storage);
+    const button = $('[data-action="continue"]');
+    button.style.display = saved ? '' : 'none';
+    if (saved) button.style.background = STONE_LOOKS[saved.stone].swatch;
+  }
+
+  // A new game replaces the saved game. Ask first.
+  async confirmNewGame() {
+    if (!loadProgress(this.storage)) return true;
+    // The saved game goes away only when the new block starts.
+    return this.ask('newStone');
+  }
+
+  resumeGame() {
+    const saved = loadProgress(this.storage);
+    if (!saved) return this.updateContinue();
+    this.mode = saved.mode;
+    this.shape = saved.shape;
+    this.stone = saved.stone;
+    this.hardness = hardnessOf(saved.stone);
+    this.ghost = saved.mode === 'challenge' ? buildGhost(saved.shape, saved.size) : null;
+    this.grid = createBlock({ size: saved.size, hardness: this.hardness });
+    this.grid.copyFrom(saved.cells);
+    this.treasures = saved.treasures;
+    this.outsideStart = saved.outsideStart || (this.ghost ? countOutside(this.grid, this.ghost.mask) : 0);
+    this.history.clear();
+    this.pieces.clear();
+    this.particles.clear();
+    this.treasureView.clear();
+    this.ghostVisible = true;
+    this.stoneView.setStone(this.grid, saved.stone, this.hardness, this.ghost);
+    this.unsaved = true;
+    this.finished = saved.finished;
+    this.lastScore = null;
+    this.playing = true;
+    this.resetCamera();
+    this.show('play');
+    this.setTool(this.tool);
+    this.updateButtons();
+    this.updateScore(true);
+    return undefined;
+  }
+
+  // Put all data of the game in a file. On a phone, the share sheet lets
+  // a parent keep the file, for example in Files or in Google Drive.
+  async exportBackup() {
+    this.saveNow();
+    const date = new Date().toISOString().slice(0, 10);
+    const name = `smashterpiece-${date}.json`;
+    const text = JSON.stringify(makeBackup(this.storage));
+    const file = new File([text], name, { type: 'application/json' });
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Smashterpiece' });
+        $('#backup-result').textContent = 'The file is ready.';
+        return;
+      }
+    } catch (error) {
+      // The parent closed the share sheet. Use a download instead only
+      // when the share failed for a different reason.
+      if (error && error.name === 'AbortError') return;
+    }
+    const url = URL.createObjectURL(file);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    $('#backup-result').textContent = 'The file is in your downloads.';
+  }
+
+  // Load a backup file and add its data to this device.
+  async importBackup(input) {
+    const file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    const result = $('#backup-result');
+    try {
+      const backup = parseBackup(await file.text());
+      const merged = mergeBackup(this.storage, backup);
+      const parts = [`${merged.statues} new statue${merged.statues === 1 ? '' : 's'}`,
+        `${merged.treasures} new treasure${merged.treasures === 1 ? '' : 's'}`];
+      if (merged.progress) parts.push('a game to continue');
+      result.textContent = `Loaded: ${parts.join(', ')}.`;
+      this.sounds.snap();
+      this.confetti.burst(80);
+    } catch (error) {
+      result.textContent = 'This file is not a Smashterpiece save file.';
+      this.sounds.thud();
+    }
+    this.updateTreasureBadge();
+    this.updateContinue();
+  }
+
   undo() {
     const cells = this.history.undo();
     if (!cells) return;
@@ -584,6 +869,7 @@ class Game {
     this.sounds.undo();
     this.particles.puff(new THREE.Vector3(0, 16, 0), new THREE.Vector3(0, 3, 0), 3, [1, 1, 1]);
     this.unsaved = this.history.canUndo();
+    this.scheduleSave();
     this.updateButtons();
     this.updateScore();
     this.refreshAim();
@@ -667,6 +953,11 @@ class Game {
     $('#museum-empty').classList.toggle('show', empty);
     $('#museum-bar').style.display = empty ? 'none' : '';
     this.show('museum');
+    this.focusMuseumCamera();
+    this.updateMuseumButtons();
+  }
+
+  focusMuseumCamera() {
     const focus = this.museum.focusPoint();
     // A narrow screen needs a camera that is farther away.
     const far = Math.max(1, 0.8 / this.camera.aspect);
@@ -675,7 +966,96 @@ class Game {
     this.camera.position.set(focus.x + 5 * far, focus.y + 6 * far, focus.z + 23 * far);
     this.controls.update();
     this.focusGoal = null;
-    this.updateMuseumButtons();
+  }
+
+  // ---------------------------------------------------------------- Share
+
+  // Make a link for the selected statue, and show it with a QR code.
+  async shareStatue() {
+    const id = this.museum.selectedId();
+    const record = loadMuseum(this.storage).find((r) => r.id === id);
+    if (!record) return;
+    const statue = decodeStatue(record);
+    const text = await encodeShare(statue);
+    this.shareUrl = `${location.origin}${location.pathname}${SHARE_PREFIX}${text}`;
+    // A phone camera reads small QR codes best. Show the code only when
+    // the link is short enough.
+    const qr = makeQr(this.shareUrl, { maxVersion: 25 });
+    const canvas = $('#share-qr');
+    canvas.hidden = !qr;
+    if (qr) drawQr(canvas, qr);
+    $('#share-text').textContent = qr
+      ? 'Scan the code with a phone, or send the link.'
+      : 'This statue has a lot of detail. Send the link.';
+    $('[data-action="send-link"]').style.display = navigator.share ? '' : 'none';
+    $('#share-result').textContent = '';
+    $('#share').classList.add('show');
+  }
+
+  async sendLink() {
+    try {
+      await navigator.share({ title: 'My Smashterpiece', url: this.shareUrl });
+    } catch {
+      // The player closed the share sheet.
+    }
+  }
+
+  async copyLink() {
+    const result = $('#share-result');
+    try {
+      await navigator.clipboard.writeText(this.shareUrl);
+      result.textContent = 'The link is copied.';
+      this.sounds.select();
+    } catch {
+      // Without the clipboard, show the link so that a parent can copy it.
+      result.textContent = this.shareUrl;
+    }
+  }
+
+  // Open a link with a shared statue. The statue shows in the Museum
+  // room, with a button to add it to the Museum.
+  async openSharedLink() {
+    const text = shareTextFrom(location.hash);
+    if (!text) return;
+    // Remove the statue from the address, so that a reload does not open
+    // it again.
+    history.replaceState(null, '', `${location.pathname}${location.search}`);
+    let statue;
+    try {
+      statue = await decodeShare(text);
+    } catch {
+      this.flash('cross');
+      this.sounds.thud();
+      return;
+    }
+    this.sharedStatue = { ...statue, id: shareId(text), created: Date.now() };
+    this.museum.selected = 0;
+    this.museum.load([encodeStatue(this.sharedStatue)]);
+    this.show('museum');
+    $('#museum').classList.add('shared');
+    this.focusMuseumCamera();
+    this.sounds.select();
+  }
+
+  addShared() {
+    const statue = this.sharedStatue;
+    if (!statue) return;
+    const known = loadMuseum(this.storage).some((r) => r.id === statue.id);
+    try {
+      if (!known) addStatue(this.storage, statue);
+    } catch {
+      // The storage is full.
+      this.flash('cross');
+      this.sounds.thud();
+      return;
+    }
+    this.sharedStatue = null;
+    this.openMuseum();
+    const index = loadMuseum(this.storage).findIndex((r) => r.id === statue.id);
+    if (index >= 0) this.selectStatue(index);
+    this.flash('museum', true);
+    this.sounds.snap();
+    this.confetti.burst(90);
   }
 
   updateMuseumButtons() {
@@ -817,6 +1197,8 @@ class Game {
       }
       this.pieces.update(dt);
       this.particles.update(dt);
+      this.treasureView.update(dt);
+      if (this.screen === 'play') this.showHints(dt);
       // The stone wobbles like jelly after a hit.
       this.wobble = Math.max(0, this.wobble - dt * 3);
       const s = this.wobble * Math.sin(time * 45) * 0.03;
@@ -849,11 +1231,36 @@ class Game {
   }
 }
 
+// Draw a QR code on a canvas, with a white border of 4 modules. Each
+// module gets the same whole number of pixels, so that the code is sharp.
+function drawQr(canvas, qr) {
+  const cells = qr.size + 8;
+  const room = Math.min(window.innerWidth * 0.62, window.innerHeight * 0.42, 320);
+  const cssScale = Math.max(2, Math.floor(room / cells));
+  const dpr = Math.ceil(Math.min(3, window.devicePixelRatio || 1));
+  const scale = cssScale * dpr;
+  canvas.style.width = `${cssScale * cells}px`;
+  canvas.style.height = `${cssScale * cells}px`;
+  canvas.width = scale * cells;
+  canvas.height = scale * cells;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#000000';
+  for (let y = 0; y < qr.size; y++) {
+    for (let x = 0; x < qr.size; x++) {
+      if (qr.dark(x, y)) ctx.fillRect((x + 4) * scale, (y + 4) * scale, scale, scale);
+    }
+  }
+}
+
 function start() {
   try {
     // Keep a reference to the game for the browser console.
     window.game = new Game();
     $('#loading').classList.remove('show');
+    window.game.openSharedLink();
+    window.addEventListener('hashchange', () => window.game.openSharedLink());
   } catch (error) {
     console.error(error);
     $('#loading .spinner').style.display = 'none';
@@ -861,3 +1268,10 @@ function start() {
 }
 
 start();
+
+// Keep the game files for offline play and for the installed app.
+if ('serviceWorker' in navigator && window.isSecureContext) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => undefined);
+  });
+}

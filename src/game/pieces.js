@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { buildMesh } from '../core/mesher.js';
 import { voxelMeshOptions, geometryFrom, stoneMaterial } from './stone-view.js';
+import { isClear } from './palette.js';
 
 const GRAVITY = 70;
 const SHAKE_TIME = 0.18;
@@ -135,7 +136,7 @@ export class FallingPieces {
       if (item.stone === 'sand') {
         // Sand falls apart into small grains.
         this.particles.chip(p, vel.multiplyScalar(0.4), 0.2 + Math.random() * 0.25, this.colorOf(index));
-      } else if (item.stone === 'glass' && k % 2 === 0) {
+      } else if (isClear(item.stone) && k % 2 === 0) {
         const color = Math.random() < 0.4 ? [1, 1, 1] : [0.55, 0.9, 1];
         this.particles.spark(p, vel, 0.4 + Math.random() * 0.5, color, 0.6 + Math.random() * 0.4);
       } else {
@@ -149,7 +150,7 @@ export class FallingPieces {
     }
     if (item.stone === 'sand') this.sounds.pour(0.8);
     else this.sounds.crash(item.count);
-    if (item.stone === 'glass') this.sounds.shatter(item.count);
+    if (isClear(item.stone)) this.sounds.shatter(item.count);
     this.group.remove(mesh);
     mesh.geometry.dispose();
   }
