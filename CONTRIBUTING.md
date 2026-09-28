@@ -25,8 +25,9 @@ messages.
 - When you add a file to the game, add it to the `FILES` list in
   `sw.js`, and to the deploy step in `.github/workflows/pages.yml` if
   it is in a new folder. A test makes sure that `sw.js` keeps all files.
-- When you change a game file, change the `CACHE` name in `sw.js`, so
-  that the installed app gets a clean copy.
+- Do not change `const VERSION = 'dev';` in `sw.js`. The deploy writes
+  the version of each deploy into that line. On a local server, the
+  version `dev` always gets the newest files.
 
 ## Accessibility
 

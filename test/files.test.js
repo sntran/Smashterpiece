@@ -26,3 +26,11 @@ test('the manifest uses relative paths and has the icons', () => {
   }
   assert.ok(manifest.icons.some((i) => i.sizes === '512x512' && i.purpose === 'maskable'));
 });
+
+test('the deploy can write the version into the service worker', () => {
+  const sw = readFileSync(new URL('sw.js', root), 'utf8');
+  // The deploy workflow replaces exactly this line.
+  assert.match(sw, /^const VERSION = 'dev';$/m);
+  const workflow = readFileSync(new URL('.github/workflows/pages.yml', root), 'utf8');
+  assert.ok(workflow.includes("s/^const VERSION = 'dev';$/"));
+});

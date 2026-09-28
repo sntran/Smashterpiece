@@ -1,10 +1,18 @@
 // The service worker. It keeps a copy of the game files, so that the
 // game starts without a network connection after the first visit.
 //
-// Each request gets the copy from the cache first. At the same time, the
-// service worker gets a new copy from the network for the next visit.
+// Each deploy has its own version. The deploy workflow writes the version
+// (the commit) into VERSION below. A new version is a new sw.js file, so
+// the browser installs the new service worker. The new service worker
+// gets all the files of its version from the network, into a new cache.
+// Thus one device never mixes files of two versions. The game then
+// reloads at a safe moment (see src/game/update.js).
+//
+// The version 'dev' is for a local server: each request goes to the
+// network first, so that a change shows at once.
 
-const CACHE = 'smashterpiece-v4';
+const VERSION = 'dev';
+const CACHE = `smashterpiece-${VERSION}`;
 const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.170.0/';
 
 // All files that the game needs. The test "the service worker keeps all
@@ -62,6 +70,7 @@ const FILES = [
   './src/game/textures.js',
   './src/game/tools-view.js',
   './src/game/treasures-view.js',
+  './src/game/update.js',
   `${THREE_URL}build/three.module.js`,
   `${THREE_URL}examples/jsm/controls/OrbitControls.js`,
 ];
@@ -69,16 +78,26 @@ const FILES = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE).then(async (cache) => {
-      // Add the files one at a time. A missing file does not stop the others.
-      await Promise.all(FILES.map((url) => cache.add(url).catch(() => undefined)));
-    }).then(() => self.skipWaiting()),
+      // 'reload' does not use the HTTP cache of the browser, so that each
+      // file is the file of this version. A missing file does not stop
+      // the others.
+      await Promise.all(FILES.map((url) =>
+        fetch(new Request(url, { cache: 'reload' }))
+          .then((response) => (response.ok ? cache.put(url, response) : undefined))
+          .catch(() => undefined)));
+    }),
   );
+});
+
+// The page asks the new service worker to start at once.
+self.addEventListener('message', (event) => {
+  if (event.data === 'activate') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith('smashterpiece-') && k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });
@@ -89,22 +108,34 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   const local = url.origin === self.location.origin;
   if (!local && !request.url.startsWith(THREE_URL)) return;
-
-  event.respondWith(
-    caches.open(CACHE).then(async (cache) => {
-      const cached = await cache.match(request, { ignoreSearch: local });
-      const fresh = fetch(request)
-        .then((response) => {
-          if (response.ok) cache.put(request, response.clone());
-          return response;
-        })
-        .catch(() => undefined);
-      if (cached) {
-        event.waitUntil(fresh);
-        return cached;
-      }
-      const response = await fresh;
-      return response ?? (request.mode === 'navigate' ? cache.match('./index.html') : Response.error());
-    }),
-  );
+  event.respondWith(VERSION === 'dev' ? networkFirst(request) : cacheFirst(request, local));
 });
+
+// A released version: use the files of this version. Get a missing file
+// from the network one time.
+async function cacheFirst(request, local) {
+  const cache = await caches.open(CACHE);
+  const cached = await cache.match(request, { ignoreSearch: local });
+  if (cached) return cached;
+  try {
+    const response = await fetch(request);
+    if (response.ok) cache.put(request, response.clone());
+    return response;
+  } catch {
+    return (request.mode === 'navigate' && (await cache.match('./index.html'))) || Response.error();
+  }
+}
+
+// A local server: get the newest file, and use the cache only offline.
+async function networkFirst(request) {
+  const cache = await caches.open(CACHE);
+  try {
+    const response = await fetch(request, { cache: 'no-cache' });
+    if (response.ok) cache.put(request, response.clone());
+    return response;
+  } catch {
+    return (await cache.match(request, { ignoreSearch: true }))
+      || (request.mode === 'navigate' && (await cache.match('./index.html')))
+      || Response.error();
+  }
+}

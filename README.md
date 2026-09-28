@@ -229,8 +229,20 @@ play it without a network connection.
 
 After the first visit, the service worker (`sw.js`) keeps a copy of the
 game files and of three.js. Then the game starts without a network
-connection. When a new version is on the server, the game gets it in
-the background and shows it at the next start.
+connection.
+
+### New versions
+
+Each deploy has its own version: the deploy workflow writes the commit
+into `sw.js`. When a player opens the game, or comes back to an
+installed app, the game asks for a new version. The new version
+downloads all its files together, so the device never mixes files of
+two versions. Then the game reloads at a safe moment:
+
+- On the start screen, the game reloads a few seconds after the start.
+- During a game, the game waits. It reloads when the player goes back
+  to the start screen. The automatic save keeps the block, so
+  **Continue** brings it back.
 
 On iPhone and iPad, the installed app has its own storage. The Museum
 and the treasures in the app are not the same as in Safari.
