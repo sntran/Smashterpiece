@@ -6,7 +6,7 @@ export const SETTINGS_KEY = 'smashterpiece.settings';
 // The default values. `reduceMotion` and `contrast` also follow the
 // settings of the device (see defaultSettings).
 export const DEFAULTS = {
-  speak: true,
+  speak: false,
   easyControls: false,
   easyMode: false,
   reduceMotion: false,

@@ -45,6 +45,13 @@ jobs:
           mkdir _site
           cp index.html style.css manifest.webmanifest sw.js _site/
           cp -r src icons _site/
+      - name: Write the version into the service worker
+        # Each deploy gets a new version. Then each device gets all the new
+        # files together (see sw.js).
+        run: |
+          version="${GITHUB_SHA::12}"
+          sed -i "s/^const VERSION = 'dev';$/const VERSION = '${version}';/" _site/sw.js
+          grep -q "const VERSION = '${version}';" _site/sw.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

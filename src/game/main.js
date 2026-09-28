@@ -40,6 +40,7 @@ import { decorateMethods, DECOR_TOOLS } from './decorate-ui.js';
 import { accessMethods } from './access-ui.js';
 import { hintMethods } from './hints-ui.js';
 import { Music } from './music.js';
+import { setupUpdates, applyUpdateIfReady } from './update.js';
 import { StickerView } from './stickers-view.js';
 
 // A pointer that moves less than this number of pixels makes a hit.
@@ -249,6 +250,7 @@ class Game {
     if (name !== 'play') this.hideCursor?.();
     if (this.settings?.reduceMotion) this.controls.autoRotate = false;
     if (this.settings) this.afterShow(name);
+    if (name === 'menu') applyUpdateIfReady();
   }
 
   // Browsers let a page make sound only after the player touches it.
@@ -978,9 +980,8 @@ function start() {
 
 start();
 
-// Keep the game files for offline play and for the installed app.
-if ('serviceWorker' in navigator && window.isSecureContext) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => undefined);
-  });
-}
+// Keep the game files for offline play and for the installed app, and
+// get each new version. The start screen is a safe moment to reload.
+window.addEventListener('load', () => {
+  setupUpdates(() => window.game?.screen === 'menu' && !document.querySelector('.overlay.show'));
+});
