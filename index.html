@@ -46,38 +46,38 @@
   <div id="menu" class="screen">
     <div class="logo bounce">Smashterpiece</div>
     <div class="tiles">
-      <button class="tile green" data-action="continue" data-label="Continue" aria-label="Continue"></button>
-      <button class="tile orange" data-action="free" data-label="Carve" aria-label="Carve"></button>
-      <button class="tile cyan" data-action="challenge" data-label="Shapes" aria-label="Shapes"></button>
-      <button class="tile purple" data-action="museum" data-label="Museum" aria-label="Museum"></button>
-      <button class="tile yellow" data-action="treasures" data-label="Treasures" aria-label="Treasures">
+      <button class="tile green" data-action="continue" data-label="Continue" data-i18n-label="menu.continue" aria-label="Continue" data-i18n-aria="menu.continue"></button>
+      <button class="tile orange" data-action="free" data-label="Carve" data-i18n-label="menu.carve" aria-label="Carve" data-i18n-aria="menu.carve"></button>
+      <button class="tile cyan" data-action="challenge" data-label="Shapes" data-i18n-label="menu.shapes" aria-label="Shapes" data-i18n-aria="menu.shapes"></button>
+      <button class="tile purple" data-action="museum" data-label="Museum" data-i18n-label="menu.museum" aria-label="Museum" data-i18n-aria="menu.museum"></button>
+      <button class="tile yellow" data-action="treasures" data-label="Treasures" data-i18n-label="menu.treasures" aria-label="Treasures" data-i18n-aria="menu.treasures">
         <span class="badge" id="treasure-badge"></span>
       </button>
     </div>
-    <button class="round small corner-bl" data-action="parents" aria-label="Settings"></button>
-    <button class="dedication" data-action="about" aria-label="For An Nhiên. About this game.">
-      <span aria-hidden="true">❤️</span> For <span lang="vi">An Nhiên</span>
+    <button class="round small corner-bl" data-action="parents" aria-label="Settings" data-i18n-aria="menu.settings"></button>
+    <button class="dedication" data-action="about" aria-label="For An Nhiên. About this game." data-i18n-aria="menu.aboutLabel" data-name="short">
+      <span aria-hidden="true">❤️</span> <span data-i18n-html="menu.for" data-name="short">For <span lang="vi">An Nhiên</span></span>
     </button>
-    <button class="round small corner-br" data-action="sound" aria-label="Sound"></button>
+    <button class="round small corner-br" data-action="sound" aria-label="Sound" data-i18n-aria="menu.sound"></button>
   </div>
 
   <div id="shapes" class="screen picker">
-    <button class="round corner-tl" data-action="back" aria-label="Back"></button>
+    <button class="round corner-tl" data-action="back" aria-label="Back" data-i18n-aria="common.back"></button>
     <div class="tiles" id="shape-tiles"></div>
   </div>
 
   <div id="letters" class="screen picker">
-    <button class="round corner-tl" data-action="back" aria-label="Back"></button>
+    <button class="round corner-tl" data-action="back" aria-label="Back" data-i18n-aria="common.back"></button>
     <div class="tiles" id="letter-tiles"></div>
   </div>
 
   <div id="stones" class="screen">
-    <button class="round corner-tl" data-action="back" aria-label="Back"></button>
+    <button class="round corner-tl" data-action="back" aria-label="Back" data-i18n-aria="common.back"></button>
     <div class="tiles" id="stone-tiles"></div>
   </div>
 
   <div id="treasures" class="screen">
-    <button class="round corner-tl" data-action="back" aria-label="Back"></button>
+    <button class="round corner-tl" data-action="back" aria-label="Back" data-i18n-aria="common.back"></button>
     <div class="book">
       <div class="book-head"><span class="book-icon" data-icon="chest"></span><span id="treasure-count"></span></div>
       <div class="book-grid" id="treasure-grid"></div>
@@ -87,115 +87,116 @@
   </div>
 
   <div id="play" class="screen hud">
-    <button class="round corner-tl" data-action="home" aria-label="Home"></button>
+    <button class="round corner-tl" data-action="home" aria-label="Home" data-i18n-aria="common.home"></button>
     <div class="top-center" id="meter">
       <div class="stars" id="meter-stars"></div>
-      <button class="round small" data-action="ghost" aria-label="Ghost shape"></button>
-      <button class="round gold pulse" data-action="finish" aria-label="Finish"></button>
+      <button class="round small" data-action="ghost" aria-label="Ghost shape" data-i18n-aria="play.ghost"></button>
+      <button class="round gold pulse" data-action="finish" aria-label="Finish" data-i18n-aria="play.finish"></button>
     </div>
     <div class="side-right">
-      <button class="round" data-action="undo" aria-label="Undo"></button>
-      <button class="round" data-action="save" aria-label="Save to the Museum"></button>
-      <button class="round" data-action="new" aria-label="New stone"></button>
+      <button class="round" data-action="undo" aria-label="Undo" data-i18n-aria="play.undo"></button>
+      <button class="round" data-action="save" aria-label="Save to the Museum" data-i18n-aria="play.save"></button>
+      <button class="round" data-action="new" aria-label="New stone" data-i18n-aria="play.new"></button>
     </div>
-    <div class="easy-pad" id="easy-pad" hidden role="group" aria-label="Easy controls">
+    <div class="easy-pad" id="easy-pad" hidden role="group" aria-label="Easy controls" data-i18n-aria="pad.group">
       <div class="pad-grid">
-        <button class="pad" data-pad="turn-left" aria-label="Turn left">↺</button>
-        <button class="pad" data-pad="up" aria-label="Aim up">▲</button>
-        <button class="pad" data-pad="turn-right" aria-label="Turn right">↻</button>
-        <button class="pad" data-pad="left" aria-label="Aim left">◀</button>
-        <button class="pad hit" data-pad="hit" aria-label="Hit"></button>
-        <button class="pad" data-pad="right" aria-label="Aim right">▶</button>
-        <button class="pad" data-pad="zoom-out" aria-label="Zoom out">−</button>
-        <button class="pad" data-pad="down" aria-label="Aim down">▼</button>
-        <button class="pad" data-pad="zoom-in" aria-label="Zoom in">+</button>
+        <button class="pad" data-pad="turn-left" aria-label="Turn left" data-i18n-aria="pad.turnLeft">↺</button>
+        <button class="pad" data-pad="up" aria-label="Aim up" data-i18n-aria="pad.up">▲</button>
+        <button class="pad" data-pad="turn-right" aria-label="Turn right" data-i18n-aria="pad.turnRight">↻</button>
+        <button class="pad" data-pad="left" aria-label="Aim left" data-i18n-aria="pad.left">◀</button>
+        <button class="pad hit" data-pad="hit" aria-label="Hit" data-i18n-aria="pad.hit"></button>
+        <button class="pad" data-pad="right" aria-label="Aim right" data-i18n-aria="pad.right">▶</button>
+        <button class="pad" data-pad="zoom-out" aria-label="Zoom out" data-i18n-aria="pad.zoomOut">−</button>
+        <button class="pad" data-pad="down" aria-label="Aim down" data-i18n-aria="pad.down">▼</button>
+        <button class="pad" data-pad="zoom-in" aria-label="Zoom in" data-i18n-aria="pad.zoomIn">+</button>
       </div>
       <div class="pad-row">
-        <button class="pad" data-pad="tilt-up" aria-label="Look from higher">⤒</button>
-        <button class="pad" data-pad="tilt-down" aria-label="Look from lower">⤓</button>
+        <button class="pad" data-pad="tilt-up" aria-label="Look from higher" data-i18n-aria="pad.tiltUp">⤒</button>
+        <button class="pad" data-pad="tilt-down" aria-label="Look from lower" data-i18n-aria="pad.tiltDown">⤓</button>
       </div>
     </div>
     <div class="tool-dock">
       <div class="tool-options" id="tool-options" hidden></div>
-      <div class="toolbar" role="toolbar" aria-label="Tools">
-        <button class="tool" data-tool="hammer" aria-label="Hammer"></button>
-        <button class="tool" data-tool="chisel" aria-label="Point chisel"></button>
-        <button class="tool" data-tool="file" aria-label="File"></button>
-        <button class="tool" data-tool="clay" aria-label="Clay"></button>
-        <button class="tool" data-tool="brush" aria-label="Paint brush"></button>
-        <button class="tool" data-tool="sticker" aria-label="Stickers"></button>
+      <div class="toolbar" role="toolbar" aria-label="Tools" data-i18n-aria="play.tools">
+        <button class="tool" data-tool="hammer" aria-label="Hammer" data-i18n-aria="tool.hammer"></button>
+        <button class="tool" data-tool="chisel" aria-label="Point chisel" data-i18n-aria="tool.chisel"></button>
+        <button class="tool" data-tool="file" aria-label="File" data-i18n-aria="tool.file"></button>
+        <button class="tool" data-tool="clay" aria-label="Clay" data-i18n-aria="tool.clay"></button>
+        <button class="tool" data-tool="brush" aria-label="Paint brush" data-i18n-aria="tool.brush"></button>
+        <button class="tool" data-tool="sticker" aria-label="Stickers" data-i18n-aria="tool.sticker"></button>
       </div>
     </div>
   </div>
 
   <div id="museum" class="screen hud">
-    <button class="round corner-tl" data-action="home" aria-label="Home"></button>
+    <button class="round corner-tl" data-action="home" aria-label="Home" data-i18n-aria="common.home"></button>
     <div class="empty" id="museum-empty">
       <div class="big-icon" data-icon="museum"></div>
-      <button class="tile orange" data-action="free" data-label="Carve" aria-label="Carve"></button>
+      <button class="tile orange" data-action="free" data-label="Carve" data-i18n-label="menu.carve" aria-label="Carve" data-i18n-aria="menu.carve"></button>
     </div>
     <div class="museum-bar" id="museum-bar">
-      <button class="round" data-action="prev" aria-label="Previous statue"></button>
-      <button class="round green" data-action="share" aria-label="Share statue"></button>
-      <button class="round red" data-action="delete" aria-label="Delete statue"></button>
-      <button class="round" data-action="next" aria-label="Next statue"></button>
+      <button class="round" data-action="prev" aria-label="Previous statue" data-i18n-aria="museum.prev"></button>
+      <button class="round green" data-action="share" aria-label="Share statue" data-i18n-aria="museum.share"></button>
+      <button class="round red" data-action="delete" aria-label="Delete statue" data-i18n-aria="museum.delete"></button>
+      <button class="round" data-action="next" aria-label="Next statue" data-i18n-aria="museum.next"></button>
     </div>
     <div class="shared-bar" id="shared-bar">
-      <button class="tile green" data-action="add-shared" data-label="Add to my Museum" aria-label="Add to my Museum"></button>
+      <button class="tile green" data-action="add-shared" data-label="Add to my Museum" data-i18n-label="museum.add" aria-label="Add to my Museum" data-i18n-aria="museum.add"></button>
     </div>
   </div>
 
-  <div id="celebrate" class="overlay" role="dialog" aria-modal="true" aria-label="You made a Smashterpiece!">
+  <div id="celebrate" class="overlay" role="dialog" aria-modal="true" aria-label="You made a Smashterpiece!" data-i18n-aria="finish.headline">
     <div class="card">
-      <div class="headline">You made a Smashterpiece!</div>
+      <div class="headline" data-i18n="finish.headline">You made a Smashterpiece!</div>
       <div class="stars big" id="result-stars"></div>
       <div class="row">
-        <button class="round" data-action="save" aria-label="Save to the Museum"></button>
-        <button class="round" data-action="keep" aria-label="Carve more"></button>
-        <button class="round" data-action="home" aria-label="Home"></button>
+        <button class="round" data-action="save" aria-label="Save to the Museum" data-i18n-aria="play.save"></button>
+        <button class="round" data-action="keep" aria-label="Carve more" data-i18n-aria="finish.more"></button>
+        <button class="round" data-action="home" aria-label="Home" data-i18n-aria="common.home"></button>
       </div>
     </div>
   </div>
 
-  <div id="confirm" class="overlay" role="alertdialog" aria-modal="true" aria-label="Are you sure?">
+  <div id="confirm" class="overlay" role="alertdialog" aria-modal="true" aria-label="Are you sure?" data-i18n-aria="common.sure">
     <div class="card">
       <div class="big-icon" id="confirm-icon"></div>
       <div class="row">
-        <button class="round green" data-action="yes" aria-label="Yes"></button>
-        <button class="round red" data-action="no" aria-label="No"></button>
+        <button class="round green" data-action="yes" aria-label="Yes" data-i18n-aria="common.yes"></button>
+        <button class="round red" data-action="no" aria-label="No" data-i18n-aria="common.no" data-autofocus></button>
       </div>
     </div>
   </div>
 
   <div id="backup" class="overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title">
     <div class="card backup-card settings-card">
-      <button class="round small close" data-action="close" aria-label="Close"></button>
-      <h2 class="backup-title" id="settings-title">Settings</h2>
+      <button class="round small close" data-action="close" aria-label="Close" data-i18n-aria="common.close"></button>
+      <h2 class="backup-title" id="settings-title" data-i18n="settings.title">Settings</h2>
+      <div class="languages" role="group" aria-label="Language" data-i18n-aria="settings.language" id="languages"></div>
       <div class="toggles" id="setting-toggles"></div>
-      <h2 class="backup-title">Save file</h2>
-      <p class="backup-text">Keep the statues, the treasures and the game in a file. Load the file on this device or on a different device. Nothing on the device is removed.</p>
+      <h2 class="backup-title" data-i18n="backup.title">Save file</h2>
+      <p class="backup-text" data-i18n="backup.text">Keep the statues, the treasures and the game in a file. Load the file on this device or on a different device. Nothing on the device is removed.</p>
       <div class="row">
-        <button class="tile green" data-action="export" data-label="Save" aria-label="Save to a file"></button>
-        <button class="tile cyan" data-action="import" data-label="Load" aria-label="Load a file"></button>
+        <button class="tile green" data-action="export" data-label="Save" data-i18n-label="backup.save" aria-label="Save to a file" data-i18n-aria="backup.saveLabel"></button>
+        <button class="tile cyan" data-action="import" data-label="Load" data-i18n-label="backup.load" aria-label="Load a file" data-i18n-aria="backup.loadLabel"></button>
       </div>
       <p class="backup-text" id="backup-result" aria-live="polite"></p>
       <input type="file" id="import-file" accept=".json,application/json" hidden>
     </div>
   </div>
 
-  <div id="share" class="overlay" role="dialog" aria-modal="true" aria-label="Share statue">
+  <div id="share" class="overlay" role="dialog" aria-modal="true" aria-label="Share statue" data-i18n-aria="museum.share">
     <div class="card backup-card">
-      <button class="round small close" data-action="close-share" aria-label="Close"></button>
-      <h2 class="backup-title">Share statue</h2>
-      <canvas id="share-qr" aria-label="QR code of the link"></canvas>
+      <button class="round small close" data-action="close-share" aria-label="Close" data-i18n-aria="common.close"></button>
+      <h2 class="backup-title" data-i18n="share.title">Share statue</h2>
+      <canvas id="share-qr" aria-label="QR code of the link" data-i18n-aria="share.qr"></canvas>
       <p class="backup-text" id="share-text"></p>
       <div class="row">
-        <button class="tile green" data-action="send-link" data-label="Send" aria-label="Send the link"></button>
-        <button class="tile cyan" data-action="copy-link" data-label="Copy link" aria-label="Copy the link"></button>
+        <button class="tile green" data-action="send-link" data-label="Send" data-i18n-label="share.send" aria-label="Send the link" data-i18n-aria="share.sendLabel"></button>
+        <button class="tile cyan" data-action="copy-link" data-label="Copy link" data-i18n-label="share.copy" aria-label="Copy the link" data-i18n-aria="share.copyLabel"></button>
       </div>
       <div class="row">
-        <button class="tile yellow" data-action="photo" data-label="Photo" aria-label="Save a photo of the statue"></button>
-        <button class="tile purple" data-action="print" data-label="3D print" aria-label="Save a file for a 3D printer"></button>
+        <button class="tile yellow" data-action="photo" data-label="Photo" data-i18n-label="share.photo" aria-label="Save a photo of the statue" data-i18n-aria="share.photoLabel"></button>
+        <button class="tile purple" data-action="print" data-label="3D print" data-i18n-label="share.print" aria-label="Save a file for a 3D printer" data-i18n-aria="share.printLabel"></button>
       </div>
       <p class="backup-text" id="share-result" aria-live="polite"></p>
     </div>
@@ -203,12 +204,12 @@
 
   <div id="about" class="overlay" role="dialog" aria-modal="true" aria-labelledby="about-title">
     <div class="card about-card">
-      <button class="round small close" data-action="close-about" aria-label="Close"></button>
+      <button class="round small close" data-action="close-about" aria-label="Close" data-i18n-aria="common.close"></button>
       <div class="about-heart" aria-hidden="true">❤️</div>
       <h2 class="about-title" id="about-title">Smashterpiece</h2>
-      <p class="about-line">For my son, <span class="about-name" lang="vi">Trần Nhật An Nhiên</span>.</p>
-      <p class="about-line">This game was his idea.</p>
-      <p class="about-from">With love, from Dad,<br><span class="about-name" lang="vi">Trần Nguyễn Sơn</span></p>
+      <p class="about-line" data-i18n-html="about.line1" data-name="son" data-name-class="about-name">For my son, <span class="about-name" lang="vi">Trần Nhật An Nhiên</span>.</p>
+      <p class="about-line" data-i18n="about.line2">This game was his idea.</p>
+      <p class="about-from"><span data-i18n="about.from">With love, from Dad,</span><br><span class="about-name" lang="vi">Trần Nguyễn Sơn</span></p>
     </div>
   </div>
 

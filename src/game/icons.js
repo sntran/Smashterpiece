@@ -59,7 +59,7 @@ export const ICONS = {
     <rect x="9" y="10" width="46" height="8" rx="3" fill="#ff5d73"/>
     <rect x="25" y="4" width="14" height="6" rx="2" fill="#ff5d73"/>
     <path d="M24 26 V50 M32 26 V50 M40 26 V50" stroke-width="3"/>`),
-  check: svg(`<path d="M10 34 L26 50 L54 16" fill="none" stroke="#fff" stroke-width="9"/>`),
+  check: svg(`<path d="M10 34 L26 50 L54 16" fill="none" stroke="${LINE}" stroke-width="9"/>`),
   cross: svg(`<path d="M14 14 L50 50 M50 14 L14 50" fill="none" stroke="#fff" stroke-width="9"/>`),
   play: svg(`<path d="M20 8 L54 32 L20 56 Z" fill="#4ade80"/>`),
   soundOn: svg(`

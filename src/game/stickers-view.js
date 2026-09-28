@@ -6,15 +6,16 @@ import { FACE_NORMALS } from '../core/decorate.js';
 import { emojiTexture } from './treasures-view.js';
 import { toonGradient } from './textures.js';
 
+// The names of the stickers are in src/core/i18n.js (sticker.<type>).
 export const STICKER_LOOKS = {
-  eye: { emoji: '👀', name: 'Googly eye' },
-  glasses: { emoji: '🕶️', name: 'Glasses' },
-  hat: { emoji: '🎩', name: 'Hat' },
-  bow: { emoji: '🎀', name: 'Bow' },
-  flower: { emoji: '🌸', name: 'Flower' },
-  lips: { emoji: '👄', name: 'Lips' },
-  star: { emoji: '⭐', name: 'Star' },
-  crown: { emoji: '👑', name: 'Crown' },
+  eye: { emoji: '👀' },
+  glasses: { emoji: '🕶️' },
+  hat: { emoji: '🎩' },
+  bow: { emoji: '🎀' },
+  flower: { emoji: '🌸' },
+  lips: { emoji: '👄' },
+  star: { emoji: '⭐' },
+  crown: { emoji: '👑' },
 };
 
 const SIZE = 5;

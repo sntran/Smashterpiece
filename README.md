@@ -143,6 +143,27 @@ eyes, sharing, and treasures. The **Treasures** screen shows the badges
 under the treasures. A badge that you do not have yet shows how to
 earn it.
 
+## Languages
+
+The game speaks English and Vietnamese (Tiếng Việt). At the first start,
+the game uses the language of the device: Vietnamese on a device in
+Vietnamese, else English. To change the language, open **Settings** (the
+gear button) and push **English** or **Tiếng Việt**. All the buttons,
+the news, the hints and the words for screen readers change at once.
+
+The Vietnamese is Southern Vietnamese, the same as in
+[Coi Nè](https://github.com/sntran/Coi-Ne): "ba" for Dad, "con" for the
+child, and words such as "vô", "nha", "xe hơi", "vớ" and "nón". A test
+makes sure that the Vietnamese does not use Northern words such as "bố",
+"ô tô" or "mũ".
+
+With **Talk** on, the game uses a Vietnamese voice for Vietnamese, when
+the device has one. On iPhone and iPad, you can add a Vietnamese voice
+in **Settings > Accessibility > Spoken Content > Voices**.
+
+All the words are in `src/core/i18n.js`. A test makes sure that each
+language has all the words.
+
 ## Accessibility
 
 All children must be able to play. The gear button at the bottom left
@@ -324,6 +345,7 @@ The modules in `src/core/` are:
 | `badges.js` | The badges and the numbers that they use. |
 | `settings.js` | The settings, for example for accessibility. |
 | `stl.js` | The 3D print file (binary STL). |
+| `i18n.js` | The words of the game in English and in Vietnamese. |
 | `random.js` | A random number generator with a seed. |
 | `carve.js` | The voxel removal for each tool. |
 | `connect.js` | The connection check. It finds the pieces that fall. |

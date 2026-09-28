@@ -37,3 +37,12 @@ test('bad settings get the defaults', () => {
   storage.setItem(SETTINGS_KEY, 'not json');
   assert.deepEqual(loadSettings(storage), defaultSettings());
 });
+
+test('the language is saved, and a bad language is removed', () => {
+  const storage = memoryStorage();
+  assert.equal(loadSettings(storage).language, null);
+  saveSettings(storage, { ...defaultSettings(), language: 'vi' });
+  assert.equal(loadSettings(storage).language, 'vi');
+  storage.setItem(SETTINGS_KEY, '{"language": "klingon"}');
+  assert.equal(loadSettings(storage).language, null);
+});

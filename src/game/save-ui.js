@@ -101,8 +101,8 @@ export const saveMethods = {
     const text = JSON.stringify(makeBackup(this.storage));
     const file = new File([text], name, { type: 'application/json' });
     const result = await offerFile(file);
-    if (result === 'shared') $('#backup-result').textContent = 'The file is ready.';
-    if (result === 'downloaded') $('#backup-result').textContent = 'The file is in your downloads.';
+    if (result === 'shared') $('#backup-result').textContent = this.t('backup.ready');
+    if (result === 'downloaded') $('#backup-result').textContent = this.t('backup.downloaded');
   },
 
   // Load a backup file and add its data to this device.
@@ -114,14 +114,16 @@ export const saveMethods = {
     try {
       const backup = parseBackup(await file.text());
       const merged = mergeBackup(this.storage, backup);
-      const parts = [`${merged.statues} new statue${merged.statues === 1 ? '' : 's'}`,
-        `${merged.treasures} new treasure${merged.treasures === 1 ? '' : 's'}`];
-      if (merged.progress) parts.push('a game to continue');
-      result.textContent = `Loaded: ${parts.join(', ')}.`;
+      const parts = [
+        this.t('backup.statues', { count: merged.statues }),
+        this.t('backup.treasures', { count: merged.treasures }),
+      ];
+      if (merged.progress) parts.push(this.t('backup.progress'));
+      result.textContent = this.t('backup.loaded', { parts: parts.join(', ') });
       this.sounds.snap();
       this.confetti.burst(80);
     } catch {
-      result.textContent = 'This file is not a Smashterpiece save file.';
+      result.textContent = this.t('backup.bad');
       this.sounds.thud();
     }
     this.updateTreasureBadge();
