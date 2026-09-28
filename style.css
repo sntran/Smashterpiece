@@ -674,6 +674,52 @@ body.flashwhite::after {
   margin-top: 4px;
 }
 
+/* The text in a card stays inside the border. */
+.treasure {
+  padding: 8px 6px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* The badge cards have a name and a hint, so they are not square: they
+   grow with the text, and the cards in one row have the same height. */
+#badge-grid {
+  grid-template-columns: repeat(auto-fill, minmax(clamp(120px, 20vmin, 150px), 1fr));
+  align-items: stretch;
+}
+
+.treasure.badge {
+  aspect-ratio: auto;
+  min-height: clamp(110px, 18vmin, 140px);
+  border-radius: 22px;
+  padding: 10px 10px 12px;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Space between the treasures and the badges. */
+.book-grid + .book-head {
+  margin-top: clamp(20px, 4vmin, 32px);
+}
+
+.treasure.badge.got {
+  background: linear-gradient(135deg, #fff0b8, #ffd35c);
+}
+
+.treasure.badge .t-name {
+  margin-top: 2px;
+  line-height: 1.15;
+}
+
+.treasure .t-hint {
+  font-size: clamp(12px, 2vmin, 14px);
+  line-height: 1.25;
+}
+
+.treasure .t-hint:empty {
+  display: none;
+}
+
 .treasure .t-count {
   position: absolute;
   top: -8px;
