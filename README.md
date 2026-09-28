@@ -151,6 +151,12 @@ Vietnamese, else English. To change the language, open **Settings** (the
 gear button) and push **English** or **Tiếng Việt**. All the buttons,
 the news, the hints and the words for screen readers change at once.
 
+The Vietnamese is Southern Vietnamese, the same as in
+[Coi Nè](https://github.com/sntran/Coi-Ne): "ba" for Dad, "con" for the
+child, and words such as "vô", "nha", "xe hơi", "vớ" and "nón". A test
+makes sure that the Vietnamese does not use Northern words such as "bố",
+"ô tô" or "mũ".
+
 With **Talk** on, the game uses a Vietnamese voice for Vietnamese, when
 the device has one. On iPhone and iPad, you can add a Vietnamese voice
 in **Settings > Accessibility > Spoken Content > Voices**.

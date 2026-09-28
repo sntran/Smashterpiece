@@ -36,6 +36,9 @@ messages.
   `index.html` without a `data-i18n` attribute.
 - A test makes sure that the two languages have the same keys and the
   same placeholders.
+- Write the Vietnamese in Southern Vietnamese, as in `sntran/Coi-Ne`:
+  "ba" (not "bố"), "con" for the child, "vô", "nha", "xe hơi", "vớ",
+  "nón".
 
 ## Accessibility
 

@@ -35,7 +35,7 @@ test('each game item has a name in each language', () => {
 
 test('translate fills the placeholders and picks the number form', () => {
   assert.equal(translate('en', 'news.found', { name: 'Gem' }), 'You found: Gem!');
-  assert.equal(translate('vi', 'news.found', { name: 'Viên ngọc' }), 'Bạn tìm thấy: Viên ngọc!');
+  assert.equal(translate('vi', 'news.found', { name: 'Viên ngọc' }), 'Con tìm thấy: Viên ngọc!');
   assert.equal(translate('en', 'news.stars', { count: 1 }), '1 star!');
   assert.equal(translate('en', 'news.stars', { count: 2 }), '2 stars!');
   assert.equal(translate('en', 'backup.statues', { count: 0 }), '0 new statues');
@@ -53,4 +53,18 @@ test('the language comes from the choice, then from the device', () => {
   assert.equal(pickLanguage(null, ['fr-FR', 'en-GB']), 'en');
   assert.equal(pickLanguage(null, ['fr-FR']), 'en');
   assert.equal(pickLanguage('xx', []), 'en');
+});
+
+test('the Vietnamese uses Southern words', () => {
+  // Northern word -> Southern word.
+  const northern = {
+    'bố': 'ba', 'ô tô': 'xe hơi', 'chiếc tất': 'chiếc vớ', 'đôi tất': 'đôi vớ', 'mũ': 'nón', 'vào': 'vô', 'nhé': 'nha', 'cốc': 'ly', 'thìa': 'muỗng',
+  };
+  for (const [key, text] of Object.entries(STRINGS.vi)) {
+    for (const [word, southern] of Object.entries(northern)) {
+      const re = new RegExp(`(^|[^\\p{L}])${word}([^\\p{L}]|$)`, 'iu');
+      assert.ok(!re.test(text), `${key}: "${word}" is Northern. Use "${southern}".`);
+    }
+  }
+  assert.match(STRINGS.vi['about.from'], /^Ba /);
 });
