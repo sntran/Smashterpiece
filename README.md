@@ -12,7 +12,9 @@ other sites, or data collection. All data stays in the browser.
 Each button has a large picture. The buttons on the start screen and
 the stone picker also have a short name, for players who can read.
 
-1. On the start screen, select one of the four large buttons:
+1. On the start screen, select one of the large buttons:
+   - **Continue** (green arrow): go back to the last block. This button
+     shows only when there is a saved game.
    - **Carve** (block and hammer): free mode. Carve any shape.
    - **Shapes** (ghost with a star): challenge mode. Carve a shape.
    - **Museum**: look at your statues.
@@ -71,6 +73,31 @@ screen to see your collection. A treasure that you did not find yet is
 a gray shape with a question mark. Tap a found treasure to hear it.
 
 In challenge mode, the treasures are never in the ghost shape.
+
+### Saving
+
+The game saves the block automatically after each hit, and when you
+close the page or the app. Push **Continue** on the start screen to go
+back to it. When you start a new block, the game asks first, because
+the new block replaces the saved block.
+
+The **gear** button at the bottom left of the start screen opens the
+**Save file** panel. This panel is for parents:
+
+- **Save** puts all the data in one small file: the Museum, the
+  treasures and the saved block. On a phone or a tablet, the share
+  sheet opens. There you can keep the file in Files, in Google Drive,
+  or send it to a different device. On a computer, the file goes to
+  the downloads folder.
+- **Load** adds the data of a file to this device. Nothing on the
+  device is removed: the Museum gets the statues that it does not have,
+  and each treasure gets the larger count.
+
+Use a save file to move the game to a new device, or from Safari to
+the installed app. A save file also keeps the data safe when the
+browser removes the data of the site. For example, Safari can remove
+the data of a website that you did not open for some time. It does not
+remove the data of an installed app.
 
 ### Buttons during the game
 
@@ -191,6 +218,7 @@ The modules in `src/core/` are:
 | `sand.js` | The crumble rule for sand. |
 | `holes.js` | The air holes in cheese. |
 | `treasures.js` | The hidden treasures and the treasure collection. |
+| `save.js` | The automatic save, and the save file (backup) for all data. |
 | `random.js` | A random number generator with a seed. |
 | `carve.js` | The voxel removal for each tool. |
 | `connect.js` | The connection check. It finds the pieces that fall. |

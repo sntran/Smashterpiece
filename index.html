@@ -34,6 +34,7 @@
   <div id="menu" class="screen">
     <div class="logo bounce">Smashterpiece</div>
     <div class="tiles">
+      <button class="tile green" data-action="continue" data-label="Continue" aria-label="Continue"></button>
       <button class="tile orange" data-action="free" data-label="Carve" aria-label="Carve"></button>
       <button class="tile cyan" data-action="challenge" data-label="Shapes" aria-label="Shapes"></button>
       <button class="tile purple" data-action="museum" data-label="Museum" aria-label="Museum"></button>
@@ -41,6 +42,7 @@
         <span class="badge" id="treasure-badge"></span>
       </button>
     </div>
+    <button class="round small corner-bl" data-action="parents" aria-label="Save file"></button>
     <button class="round small corner-br" data-action="sound" aria-label="Sound"></button>
   </div>
 
@@ -113,6 +115,20 @@
         <button class="round green" data-action="yes" aria-label="Yes"></button>
         <button class="round red" data-action="no" aria-label="No"></button>
       </div>
+    </div>
+  </div>
+
+  <div id="backup" class="overlay">
+    <div class="card backup-card">
+      <button class="round small close" data-action="close" aria-label="Close"></button>
+      <div class="backup-title">Save file</div>
+      <p class="backup-text">Keep the statues, the treasures and the game in a file. Load the file on this device or on a different device. Nothing on the device is removed.</p>
+      <div class="row">
+        <button class="tile green" data-action="export" data-label="Save" aria-label="Save to a file"></button>
+        <button class="tile cyan" data-action="import" data-label="Load" aria-label="Load a file"></button>
+      </div>
+      <p class="backup-text" id="backup-result" aria-live="polite"></p>
+      <input type="file" id="import-file" accept=".json,application/json" hidden>
     </div>
   </div>
 

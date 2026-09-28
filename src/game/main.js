@@ -17,6 +17,7 @@ import { History } from '../core/history.js';
 import { buildGhost, SHAPE_NAMES } from '../core/shapes.js';
 import { matchScore, countOutside, FINISH_LIMIT, STAR_LIMITS } from '../core/score.js';
 import { addStatue, loadMuseum, removeStatue } from '../core/codec.js';
+import { saveProgress, loadProgress, clearProgress, makeBackup, parseBackup, mergeBackup } from '../core/save.js';
 
 import { createRenderer, createWorkshop, floorAt } from './scene.js';
 import { StoneView, linearColors } from './stone-view.js';
@@ -36,6 +37,8 @@ const TAP_LIMIT = 8;
 const MUTE_KEY = 'smashterpiece.muted';
 // The time between two sparkles that show where a treasure is.
 const HINT_TIME = 1.2;
+// The time from the last hit to the automatic save, in milliseconds.
+const AUTOSAVE_DELAY = 800;
 const RARITY = Object.fromEntries(TREASURES.map((t) => [t.id, t.rarity]));
 const STONE_LABELS = {
   sand: 'Sand', sandstone: 'Sandstone', chocolate: 'Chocolate', cheese: 'Cheese', ice: 'Ice',
@@ -121,6 +124,8 @@ class Game {
     this.clock = new THREE.Clock();
 
     this.sounds.setMuted(this.storage.getItem(MUTE_KEY) === '1');
+    // Ask the browser to keep the saved data, also when space is low.
+    navigator.storage?.persist?.().catch(() => undefined);
     this.buildUi();
     this.bindInput();
     this.onResize();
@@ -138,7 +143,8 @@ class Game {
         free: 'free', challenge: 'challenge', museum: 'museum', back: 'left', home: 'home',
         undo: 'undo', save: 'museum', new: 'newStone', ghost: 'ghost', finish: 'trophy',
         keep: 'play', prev: 'left', next: 'right', delete: 'trash', yes: 'check', no: 'cross',
-        treasures: 'chest',
+        treasures: 'chest', continue: 'play', parents: 'gear', export: 'download', import: 'upload',
+        close: 'cross',
       }[el.dataset.action];
       if (icon) el.innerHTML = ICONS[icon] + el.innerHTML;
       if (el.dataset.label) el.insertAdjacentHTML('beforeend', `<span class="label">${el.dataset.label}</span>`);
@@ -198,7 +204,14 @@ class Game {
     }
 
     this.updateTreasureBadge();
+    this.updateContinue();
+    $('#import-file').addEventListener('change', (e) => this.importBackup(e.target));
     document.addEventListener('click', (e) => this.onClick(e));
+    // Save the game when the player leaves the page or the app.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') this.saveNow();
+    });
+    window.addEventListener('pagehide', () => this.saveNow());
     document.addEventListener('keydown', (e) => this.onKey(e));
   }
 
@@ -223,7 +236,7 @@ class Game {
     this.hideAim();
   }
 
-  onClick(e) {
+  async onClick(e) {
     const button = e.target.closest('button');
     if (!button) return;
     this.sounds.unlock();
@@ -249,11 +262,24 @@ class Game {
     if (action !== 'sound') this.sounds.pop();
     switch (action) {
       case 'free':
+        if (!(await this.confirmNewGame())) return undefined;
         this.mode = 'free';
         this.shape = null;
         return this.show('stones');
       case 'challenge':
+        if (!(await this.confirmNewGame())) return undefined;
         return this.show('shapes');
+      case 'continue':
+        return this.resumeGame();
+      case 'parents':
+        $('#backup-result').textContent = '';
+        return $('#backup').classList.add('show');
+      case 'close':
+        return $('#backup').classList.remove('show');
+      case 'export':
+        return this.exportBackup();
+      case 'import':
+        return $('#import-file').click();
       case 'museum':
         return this.openMuseum();
       case 'treasures':
@@ -389,6 +415,8 @@ class Game {
     });
     this.treasureView.clear();
     this.outsideStart = this.ghost ? countOutside(this.grid, this.ghost.mask) : 0;
+    this.playing = true;
+    clearProgress(this.storage);
     this.history.clear();
     this.pieces.clear();
     this.particles.clear();
@@ -406,9 +434,8 @@ class Game {
 
   async goHome() {
     $('#celebrate').classList.remove('show');
-    if (this.screen === 'play' && this.unsaved) {
-      if (!(await this.ask('home'))) return;
-    }
+    if (this.screen === 'play') this.saveNow();
+    this.updateContinue();
     this.pieces.clear();
     this.particles.clear();
     this.treasureView.clear();
@@ -418,7 +445,7 @@ class Game {
   }
 
   async newStone() {
-    if (this.unsaved && !(await this.ask('newStone'))) return;
+    if (this.history.canUndo() && !(await this.ask('newStone'))) return;
     this.show('stones');
   }
 
@@ -530,6 +557,7 @@ class Game {
     this.effects(result, point, n, before);
     if (crumbled.length > 0) this.pourSand(crumbled);
     this.unsaved = true;
+    this.scheduleSave();
     this.updateButtons();
     this.updateScore();
     this.refreshAim();
@@ -692,6 +720,132 @@ class Game {
     this.show('treasures');
   }
 
+  // ---------------------------------------------------------------- Save
+
+  scheduleSave() {
+    clearTimeout(this.saveTimer);
+    this.saveTimer = setTimeout(() => this.saveNow(), AUTOSAVE_DELAY);
+  }
+
+  // Save the game in progress at once.
+  saveNow() {
+    clearTimeout(this.saveTimer);
+    if (!this.playing || !this.grid) return;
+    try {
+      saveProgress(this.storage, {
+        mode: this.mode,
+        stone: this.stone,
+        shape: this.shape,
+        size: this.grid.size,
+        cells: this.grid.cells,
+        treasures: this.treasures,
+        outsideStart: this.outsideStart,
+        finished: !!this.finished,
+        saved: Date.now(),
+      });
+    } catch {
+      // The storage is full. The game continues without the save.
+    }
+  }
+
+  // Show the Continue button when there is a saved game.
+  updateContinue() {
+    const saved = loadProgress(this.storage);
+    const button = $('[data-action="continue"]');
+    button.style.display = saved ? '' : 'none';
+    if (saved) button.style.background = STONE_LOOKS[saved.stone].swatch;
+  }
+
+  // A new game replaces the saved game. Ask first.
+  async confirmNewGame() {
+    if (!loadProgress(this.storage)) return true;
+    // The saved game goes away only when the new block starts.
+    return this.ask('newStone');
+  }
+
+  resumeGame() {
+    const saved = loadProgress(this.storage);
+    if (!saved) return this.updateContinue();
+    this.mode = saved.mode;
+    this.shape = saved.shape;
+    this.stone = saved.stone;
+    this.hardness = hardnessOf(saved.stone);
+    this.ghost = saved.mode === 'challenge' ? buildGhost(saved.shape, saved.size) : null;
+    this.grid = createBlock({ size: saved.size, hardness: this.hardness });
+    this.grid.copyFrom(saved.cells);
+    this.treasures = saved.treasures;
+    this.outsideStart = saved.outsideStart || (this.ghost ? countOutside(this.grid, this.ghost.mask) : 0);
+    this.history.clear();
+    this.pieces.clear();
+    this.particles.clear();
+    this.treasureView.clear();
+    this.ghostVisible = true;
+    this.stoneView.setStone(this.grid, saved.stone, this.hardness, this.ghost);
+    this.unsaved = true;
+    this.finished = saved.finished;
+    this.lastScore = null;
+    this.playing = true;
+    this.resetCamera();
+    this.show('play');
+    this.setTool(this.tool);
+    this.updateButtons();
+    this.updateScore(true);
+    return undefined;
+  }
+
+  // Put all data of the game in a file. On a phone, the share sheet lets
+  // a parent keep the file, for example in Files or in Google Drive.
+  async exportBackup() {
+    this.saveNow();
+    const date = new Date().toISOString().slice(0, 10);
+    const name = `smashterpiece-${date}.json`;
+    const text = JSON.stringify(makeBackup(this.storage));
+    const file = new File([text], name, { type: 'application/json' });
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Smashterpiece' });
+        $('#backup-result').textContent = 'The file is ready.';
+        return;
+      }
+    } catch (error) {
+      // The parent closed the share sheet. Use a download instead only
+      // when the share failed for a different reason.
+      if (error && error.name === 'AbortError') return;
+    }
+    const url = URL.createObjectURL(file);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    $('#backup-result').textContent = 'The file is in your downloads.';
+  }
+
+  // Load a backup file and add its data to this device.
+  async importBackup(input) {
+    const file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    const result = $('#backup-result');
+    try {
+      const backup = parseBackup(await file.text());
+      const merged = mergeBackup(this.storage, backup);
+      const parts = [`${merged.statues} new statue${merged.statues === 1 ? '' : 's'}`,
+        `${merged.treasures} new treasure${merged.treasures === 1 ? '' : 's'}`];
+      if (merged.progress) parts.push('a game to continue');
+      result.textContent = `Loaded: ${parts.join(', ')}.`;
+      this.sounds.snap();
+      this.confetti.burst(80);
+    } catch (error) {
+      result.textContent = 'This file is not a Smashterpiece save file.';
+      this.sounds.thud();
+    }
+    this.updateTreasureBadge();
+    this.updateContinue();
+  }
+
   undo() {
     const cells = this.history.undo();
     if (!cells) return;
@@ -701,6 +855,7 @@ class Game {
     this.sounds.undo();
     this.particles.puff(new THREE.Vector3(0, 16, 0), new THREE.Vector3(0, 3, 0), 3, [1, 1, 1]);
     this.unsaved = this.history.canUndo();
+    this.scheduleSave();
     this.updateButtons();
     this.updateScore();
     this.refreshAim();

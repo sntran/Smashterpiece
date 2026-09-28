@@ -810,3 +810,42 @@ body.flashwhite::after {
   padding: 0 8px;
   font-size: calc(var(--tile) * 0.12);
 }
+
+.corner-bl {
+  position: absolute;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: max(16px, env(safe-area-inset-left));
+}
+
+/* The save file panel is for parents. */
+.backup-card {
+  position: relative;
+  max-width: min(560px, calc(100vw - 32px));
+}
+
+.backup-card .close {
+  position: absolute;
+  top: -18px;
+  right: -18px;
+  background: var(--red);
+}
+
+.backup-title {
+  font-size: clamp(26px, 5vmin, 40px);
+  font-weight: 900;
+}
+
+.backup-text {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(15px, 2.6vmin, 19px);
+  line-height: 1.35;
+}
+
+.backup-card .tile {
+  --tile: clamp(110px, 20vmin, 150px);
+}
+
+#backup-result:empty {
+  display: none;
+}
