@@ -23,6 +23,18 @@ export const TREASURE_LOOKS = {
   alien: { emoji: '👽' },
   dragon: { emoji: '🐉' },
   ufo: { emoji: '🛸' },
+  lantern: { emoji: '🏮' },
+  kite: { emoji: '🪁' },
+  mango: { emoji: '🥭' },
+  balloon: { emoji: '🎈' },
+  pho: { emoji: '🍜' },
+  buffalo: { emoji: '🐃' },
+  scooter: { emoji: '🛵' },
+  teddy: { emoji: '🧸' },
+  luckymoney: { emoji: '🧧' },
+  octopus: { emoji: '🐙' },
+  shootingstar: { emoji: '🌠' },
+  castle: { emoji: '🏰' },
 };
 
 const textures = new Map();

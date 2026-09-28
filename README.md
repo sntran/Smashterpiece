@@ -57,9 +57,9 @@ the stone picker also have a short name, for players who can read.
      mistake.
    - **Paint brush**: paints the surface. Select one of 8 colors, or the
      red X to remove the paint.
-   - **Stickers**: puts a googly eye, glasses, a hat, a bow, a flower,
-     lips, a star or a crown on the statue. A sticker falls off when its
-     block breaks.
+   - **Stickers**: puts one of 15 stickers on the statue, for example
+     a googly eye, glasses, a crown, a leaf hat (nón lá), a butterfly or
+     a lantern. A sticker falls off when its block breaks.
 5. Point at the stone. Yellow blocks show the stone that the tool
    removes. Smaller orange blocks show the stone that only gets cracks.
    Green blocks show new clay.
@@ -87,7 +87,9 @@ treasure is near the surface. Dig there! When a treasure touches the
 air, it jumps out of the stone. A "NEW!" badge shows when you find a
 treasure for the first time.
 
-There are 18 treasures: 6 common, 6 rare and 6 super rare. The game
+There are 30 treasures: 10 common, 10 rare and 10 super rare. Some are
+from Vietnam, for example a bowl of phở, a water buffalo, a lantern,
+a mango, a scooter and lucky money. The game
 keeps your treasures in the browser. Open **Treasures** on the start
 screen to see your collection. A treasure that you did not find yet is
 a gray shape with a question mark. Tap a found treasure to hear it.
@@ -137,9 +139,11 @@ trophy to finish and get 1, 2 or 3 stars.
 
 ### Badges
 
-The game gives 13 badges, for example for the first hit, a big crash,
+The game gives 14 badges, for example for the first hit, a big crash,
 all the materials, 3 stars, a letter, 5 statues, painting, 2 googly
-eyes, sharing, and treasures. The **Treasures** screen shows the badges
+eyes, sharing, and treasures. **Treasure Master** is for 18 kinds of
+treasure, and **Treasure Legend** is for all of them. A badge stays
+after you get it. The **Treasures** screen shows the badges
 under the treasures. A badge that you do not have yet shows how to
 earn it.
 
@@ -208,6 +212,20 @@ camera. Use the arrow buttons to go to the next statue, or tap a
 statue. To delete a statue, push the trash button, then push the green
 check mark. The Museum keeps up to 40 statues. When it is full, it
 removes the oldest statue.
+
+### Watch how it was made
+
+Push the yellow **film** button under a statue. The game builds the
+statue again from the first block, one hit at a time, in 4 to 12
+seconds. The bar at the top shows the progress. Push the red X or
+`Escape` to stop.
+
+The game keeps each hit, each ball of clay, each paint stroke and each
+sticker as a step of 5 bytes. The replay uses the same rules as the
+game, so it gives the same statue, with the same falling pieces. A
+statue with more than 4000 steps has no replay. A statue from an older
+version of the game or from a link also has no replay. For these
+statues, the film button is off.
 
 ### Share a statue
 
@@ -342,6 +360,7 @@ The modules in `src/core/` are:
 | `share.js` | The statue link: one statue, compressed into the link. |
 | `qr.js` | The QR code encoder for the statue link. |
 | `decorate.js` | The clay, the paint and the stickers. |
+| `replay.js` | The steps of a carving, for the time-lapse. |
 | `badges.js` | The badges and the numbers that they use. |
 | `settings.js` | The settings, for example for accessibility. |
 | `stl.js` | The 3D print file (binary STL). |

@@ -15,7 +15,12 @@ export function faceOf(normal) {
 
 // The number of paint colors. Paint 0 means no paint.
 export const PAINT_COLORS = 8;
-export const STICKER_TYPES = ['eye', 'glasses', 'hat', 'bow', 'flower', 'lips', 'star', 'crown'];
+// Add new stickers only at the end: a statue link keeps the position of
+// the sticker in this list.
+export const STICKER_TYPES = [
+  'eye', 'glasses', 'hat', 'bow', 'flower', 'lips', 'star', 'crown',
+  'nonla', 'heart', 'butterfly', 'cap', 'nose', 'ladybug', 'lantern',
+];
 export const MAX_STICKERS = 60;
 
 function isStone(v) {

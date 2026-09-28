@@ -30,7 +30,7 @@ export const SETTING_LOOKS = [
 ];
 
 // The screens that have their own words (screen.<name>).
-const SCREENS_WITH_WORDS = ['menu', 'shapes', 'letters', 'stones', 'play', 'museum', 'treasures'];
+const SCREENS_WITH_WORDS = ['menu', 'shapes', 'letters', 'stones', 'play', 'museum', 'treasures', 'replay'];
 
 function deviceSettings() {
   const query = (q) => typeof window.matchMedia === 'function' && window.matchMedia(q).matches;
@@ -238,6 +238,7 @@ export const accessMethods = {
       e.preventDefault();
       if (open?.id === 'confirm') return $('#confirm [data-action="no"]').click();
       if (open) return open.classList.remove('show');
+      if (this.screen === 'replay') return this.stopReplay();
       if (this.screen === 'play' || this.screen === 'museum' || this.screen === 'treasures') return this.goHome();
       if (this.screen !== 'menu') return $(`#${this.screen} [data-action="back"]`)?.click();
       return undefined;

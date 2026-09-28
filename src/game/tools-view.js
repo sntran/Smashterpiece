@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { toonGradient } from './textures.js';
 import { emojiTexture } from './treasures-view.js';
-import { STICKER_LOOKS } from './stickers-view.js';
+import { STICKER_LOOKS, stickerTexture } from './stickers-view.js';
 
 const toolMaterials = [];
 
@@ -131,7 +131,7 @@ export class ToolView {
 
   setSticker(type) {
     const material = this.models.sticker.userData.material;
-    material.map = emojiTexture(STICKER_LOOKS[type].emoji);
+    material.map = stickerTexture(type);
     material.needsUpdate = true;
   }
 

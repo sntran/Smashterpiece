@@ -28,6 +28,12 @@ messages.
 - Do not change `const VERSION = 'dev';` in `sw.js`. The deploy writes
   the version of each deploy into that line. On a local server, the
   version `dev` always gets the newest files.
+- Add a new stone, shape, sticker or step type (`OPS` in `replay.js`)
+  only at the end of its list. The statue links and the replays keep the
+  position in the list, so a change of the order changes the old statues
+  and the old replays.
+- A change to the carving rules changes the old replays. Then the
+  replay of an old statue can give a different statue.
 
 ## Languages
 

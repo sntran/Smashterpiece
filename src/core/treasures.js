@@ -27,6 +27,18 @@ export const TREASURES = [
   { id: 'alien', rarity: 'super' },
   { id: 'dragon', rarity: 'super' },
   { id: 'ufo', rarity: 'super' },
+  { id: 'lantern', rarity: 'common' },
+  { id: 'kite', rarity: 'common' },
+  { id: 'mango', rarity: 'common' },
+  { id: 'balloon', rarity: 'common' },
+  { id: 'pho', rarity: 'rare' },
+  { id: 'buffalo', rarity: 'rare' },
+  { id: 'scooter', rarity: 'rare' },
+  { id: 'teddy', rarity: 'rare' },
+  { id: 'luckymoney', rarity: 'super' },
+  { id: 'octopus', rarity: 'super' },
+  { id: 'shootingstar', rarity: 'super' },
+  { id: 'castle', rarity: 'super' },
 ];
 
 export const TREASURE_IDS = TREASURES.map((t) => t.id);

@@ -2,8 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { STONE_NAMES } from '../src/core/stones.js';
 import { PICTURE_SHAPES } from '../src/core/shapes.js';
+import { TREASURES } from '../src/core/treasures.js';
 import {
-  BADGES, BADGE_IDS, emptyStats, recordEvent, earnedBadges, newBadges, loadStats, saveStats, STATS_KEY,
+  BADGES, BADGE_IDS, emptyStats, recordEvent, earnedBadges, newBadges, loadStats, saveStats, STATS_KEY, keepBadges,
 } from '../src/core/badges.js';
 
 function memoryStorage() {
@@ -72,4 +73,22 @@ test('the stats are saved and bad data is removed', () => {
   assert.equal(clean.painted, 0);
   storage.setItem(STATS_KEY, 'not json');
   assert.deepEqual(loadStats(storage), emptyStats());
+});
+
+test('a badge stays when its check becomes harder', () => {
+  let s = recordEvent(emptyStats(), 'treasures', { kinds: 18 });
+  assert.ok(earnedBadges(s).includes('treasure-master'));
+  assert.ok(!earnedBadges(s).includes('treasure-legend'));
+  s = keepBadges(s);
+  // A later version needs more: the kept badge stays.
+  const harder = { ...s, treasureKinds: 0 };
+  assert.ok(earnedBadges(harder).includes('treasure-master'));
+  const storage = memoryStorage();
+  saveStats(storage, s);
+  assert.deepEqual(loadStats(storage).kept, s.kept);
+});
+
+test('all the treasures earn the legend badge', () => {
+  const s = recordEvent(emptyStats(), 'treasures', { kinds: TREASURES.length });
+  assert.ok(earnedBadges(s).includes('treasure-legend'));
 });

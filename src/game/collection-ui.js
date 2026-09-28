@@ -3,7 +3,7 @@
 
 import * as THREE from 'three';
 import { TREASURES, nearestOpening, loadCollection, addToCollection } from '../core/treasures.js';
-import { BADGES, loadStats, saveStats, recordEvent, newBadges, earnedBadges } from '../core/badges.js';
+import { BADGES, loadStats, saveStats, recordEvent, newBadges, earnedBadges, keepBadges } from '../core/badges.js';
 import { TREASURE_LOOKS } from './treasures-view.js';
 import { $ } from './dom.js';
 
@@ -23,6 +23,7 @@ export const BADGE_LOOKS = {
   sharer: { emoji: '💌' },
   'treasure-hunter': { emoji: '🧭' },
   'treasure-master': { emoji: '👑' },
+  'treasure-legend': { emoji: '🐉' },
 };
 
 // Keep the stats, and tell the game about each new badge.
@@ -30,12 +31,12 @@ export class StatsKeeper {
   constructor(storage, onBadge) {
     this.storage = storage;
     this.onBadge = onBadge;
-    this.stats = loadStats(storage);
+    this.stats = keepBadges(loadStats(storage));
   }
 
   event(name, data) {
     const before = this.stats;
-    this.stats = recordEvent(before, name, data);
+    this.stats = keepBadges(recordEvent(before, name, data));
     try {
       saveStats(this.storage, this.stats);
     } catch {

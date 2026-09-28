@@ -11,7 +11,7 @@
 
 import {
   rleEncode, rleDecode, toBase64, fromBase64, loadMuseum, saveMuseum, decodeStatue, MUSEUM_LIMIT,
-  encodePaint, decodePaint, cleanStickers,
+  encodePaint, decodePaint, cleanStickers, isReplayData,
 } from './codec.js';
 import { loadCollection, COLLECTION_KEY, TREASURE_IDS } from './treasures.js';
 import { STONES } from './stones.js';
@@ -57,6 +57,7 @@ export function encodeProgress(state) {
   if (painted) record.paint = painted;
   if (state.stickers && state.stickers.length) record.stickers = cleanStickers(state.stickers, size);
   if (state.undo && state.undo.length) record.undo = state.undo.slice(-SAVED_UNDO_STEPS).map((s) => encodeStep(s, size));
+  if (isReplayData(state.replay)) record.replay = { start: state.replay.start, steps: state.replay.steps };
   return record;
 }
 
@@ -88,6 +89,7 @@ export function decodeProgress(record) {
     paint: decodePaint(record.paint, cells.length),
     stickers: cleanStickers(record.stickers, size),
     undo: Array.isArray(record.undo) ? record.undo.map((s) => decodeStep(s, size)) : [],
+    replay: isReplayData(record.replay) ? record.replay : null,
   };
 }
 

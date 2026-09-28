@@ -1,7 +1,7 @@
 // The Museum screen. These methods belong to the Game class (see main.js).
 
 import * as THREE from 'three';
-import { loadMuseum, removeStatue } from '../core/codec.js';
+import { loadMuseum, removeStatue, isReplayData } from '../core/codec.js';
 import { $ } from './dom.js';
 
 export const museumMethods = {
@@ -32,12 +32,17 @@ export const museumMethods = {
     const many = this.museum.count > 1;
     $('[data-action="prev"]').disabled = !many;
     $('[data-action="next"]').disabled = !many;
+    // A statue from an older version of the game has no time-lapse.
+    const id = this.museum.selectedId();
+    const record = loadMuseum(this.storage).find((r) => r.id === id);
+    $('[data-action="replay"]').disabled = !isReplayData(record?.replay);
   },
 
   selectStatue(index) {
     if (this.museum.count === 0) return;
     this.museum.select(index);
     this.focusGoal = this.museum.focusPoint();
+    this.updateMuseumButtons();
   },
 
   async deleteStatue() {

@@ -136,6 +136,7 @@
     </div>
     <div class="museum-bar" id="museum-bar">
       <button class="round" data-action="prev" aria-label="Previous statue" data-i18n-aria="museum.prev"></button>
+      <button class="round yellow" data-action="replay" aria-label="Watch how it was made" data-i18n-aria="museum.replay"></button>
       <button class="round green" data-action="share" aria-label="Share statue" data-i18n-aria="museum.share"></button>
       <button class="round red" data-action="delete" aria-label="Delete statue" data-i18n-aria="museum.delete"></button>
       <button class="round" data-action="next" aria-label="Next statue" data-i18n-aria="museum.next"></button>
@@ -143,6 +144,11 @@
     <div class="shared-bar" id="shared-bar">
       <button class="tile green" data-action="add-shared" data-label="Add to my Museum" data-i18n-label="museum.add" aria-label="Add to my Museum" data-i18n-aria="museum.add"></button>
     </div>
+  </div>
+
+  <div id="replay" class="screen hud">
+    <button class="round red corner-tl" data-action="stop-replay" aria-label="Stop" data-i18n-aria="replay.stop"></button>
+    <div class="replay-track" aria-hidden="true"><div class="replay-bar" id="replay-bar"></div></div>
   </div>
 
   <div id="celebrate" class="overlay" role="dialog" aria-modal="true" aria-label="You made a Smashterpiece!" data-i18n-aria="finish.headline">

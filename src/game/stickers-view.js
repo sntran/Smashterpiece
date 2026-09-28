@@ -16,7 +16,80 @@ export const STICKER_LOOKS = {
   lips: { emoji: '👄' },
   star: { emoji: '⭐' },
   crown: { emoji: '👑' },
+  // There is no emoji for the Vietnamese leaf hat. The game draws it.
+  nonla: { draw: drawNonLa },
+  heart: { emoji: '❤️' },
+  butterfly: { emoji: '🦋' },
+  cap: { emoji: '🧢' },
+  nose: { emoji: '👃' },
+  ladybug: { emoji: '🐞' },
+  lantern: { emoji: '🏮' },
 };
+
+// Draw a nón lá (the Vietnamese leaf hat) from the side.
+function drawNonLa(ctx, size) {
+  const s = size / 128;
+  ctx.save();
+  ctx.scale(s, s);
+  ctx.lineJoin = 'round';
+  // The shadow under the brim.
+  ctx.fillStyle = 'rgba(59,42,82,0.25)';
+  ctx.beginPath();
+  ctx.ellipse(64, 100, 58, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // The cone.
+  const g = ctx.createLinearGradient(20, 0, 108, 0);
+  g.addColorStop(0, '#f7e3a1');
+  g.addColorStop(0.5, '#fff3c4');
+  g.addColorStop(1, '#e8c86f');
+  ctx.fillStyle = g;
+  ctx.strokeStyle = '#3b2a52';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(64, 18);
+  ctx.lineTo(122, 94);
+  ctx.quadraticCurveTo(64, 108, 6, 94);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  // The rings of the leaves.
+  ctx.strokeStyle = 'rgba(160,120,40,0.55)';
+  ctx.lineWidth = 3;
+  for (const t of [0.35, 0.55, 0.75]) {
+    const y = 18 + t * 76;
+    const half = t * 58;
+    ctx.beginPath();
+    ctx.moveTo(64 - half, y);
+    ctx.quadraticCurveTo(64, y + 10 * t, 64 + half, y);
+    ctx.stroke();
+  }
+  // The strap.
+  ctx.strokeStyle = '#d92b4b';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(34, 98);
+  ctx.quadraticCurveTo(64, 124, 94, 98);
+  ctx.stroke();
+  ctx.restore();
+}
+
+const drawnTextures = new Map();
+
+// The picture of a sticker: an emoji, or a drawing.
+export function stickerTexture(type) {
+  const look = STICKER_LOOKS[type];
+  if (!look.draw) return emojiTexture(look.emoji);
+  if (!drawnTextures.has(type)) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    look.draw(canvas.getContext('2d'), 128);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    drawnTextures.set(type, texture);
+  }
+  return drawnTextures.get(type);
+}
 
 const SIZE = 5;
 const EYE = 2.2;
@@ -29,7 +102,7 @@ const materials = new Map();
 function stickerMaterial(type) {
   if (!materials.has(type)) {
     materials.set(type, new THREE.MeshBasicMaterial({
-      map: emojiTexture(STICKER_LOOKS[type].emoji),
+      map: stickerTexture(type),
       transparent: true,
       alphaTest: 0.1,
       side: THREE.DoubleSide,
