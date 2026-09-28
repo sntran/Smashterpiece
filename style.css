@@ -77,11 +77,11 @@ button svg {
   display: block;
 }
 
-#menu, #shapes, #stones, #loading {
+#menu, #shapes, #letters, #stones, #loading {
   background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.25), rgba(110, 200, 255, 0.2));
 }
 
-#menu.show, #shapes.show, #stones.show, #loading.show {
+#menu.show, #shapes.show, #letters.show, #stones.show, #loading.show {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -503,15 +503,30 @@ body.flashwhite::after {
   font-weight: 900;
 }
 
-/* The stone picker has many stones. The tiles are smaller. */
-#stones {
+/* The pickers have many buttons. The tiles are smaller, and the screen
+   can scroll. */
+#stones, .picker {
   --tile: clamp(96px, 19vmin, 170px);
   overflow-y: auto;
 }
 
-#stones.show {
+#letters {
+  --tile: clamp(72px, 13vmin, 120px);
+}
+
+#stones.show, .picker.show {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: safe center;
   padding: calc(var(--btn) + 28px) 0 24px;
+}
+
+.tile .emoji.letter {
+  font-size: calc(var(--tile) * 0.42);
+  font-weight: 900;
+  color: var(--ink);
+  line-height: 1;
 }
 
 .tile.stone {

@@ -8,7 +8,48 @@
 
 import { GRID_SIZE } from './grid.js';
 
-export const SHAPE_NAMES = ['star', 'fish', 'heart', 'duck', 'smiley', 'rocket'];
+// The block letters for the letter challenges. Each letter has 7 rows of
+// 5 columns, from the top row down.
+const FONT = {
+  A: ['.###.', '#...#', '#...#', '#####', '#...#', '#...#', '#...#'],
+  B: ['####.', '#...#', '#...#', '####.', '#...#', '#...#', '####.'],
+  C: ['.###.', '#...#', '#....', '#....', '#....', '#...#', '.###.'],
+  D: ['####.', '#...#', '#...#', '#...#', '#...#', '#...#', '####.'],
+  E: ['#####', '#....', '#....', '####.', '#....', '#....', '#####'],
+  F: ['#####', '#....', '#....', '####.', '#....', '#....', '#....'],
+  G: ['.###.', '#...#', '#....', '#.###', '#...#', '#...#', '.###.'],
+  H: ['#...#', '#...#', '#...#', '#####', '#...#', '#...#', '#...#'],
+  I: ['#####', '..#..', '..#..', '..#..', '..#..', '..#..', '#####'],
+  J: ['..###', '...#.', '...#.', '...#.', '#..#.', '#..#.', '.##..'],
+  K: ['#...#', '#..#.', '#.#..', '##...', '#.#..', '#..#.', '#...#'],
+  L: ['#....', '#....', '#....', '#....', '#....', '#....', '#####'],
+  M: ['#...#', '##.##', '#.#.#', '#.#.#', '#...#', '#...#', '#...#'],
+  N: ['#...#', '##..#', '#.#.#', '#..##', '#...#', '#...#', '#...#'],
+  O: ['.###.', '#...#', '#...#', '#...#', '#...#', '#...#', '.###.'],
+  P: ['####.', '#...#', '#...#', '####.', '#....', '#....', '#....'],
+  Q: ['.###.', '#...#', '#...#', '#...#', '#.#.#', '#..#.', '.##.#'],
+  R: ['####.', '#...#', '#...#', '####.', '#.#..', '#..#.', '#...#'],
+  S: ['.####', '#....', '#....', '.###.', '....#', '....#', '####.'],
+  T: ['#####', '..#..', '..#..', '..#..', '..#..', '..#..', '..#..'],
+  U: ['#...#', '#...#', '#...#', '#...#', '#...#', '#...#', '.###.'],
+  V: ['#...#', '#...#', '#...#', '#...#', '#...#', '.#.#.', '..#..'],
+  W: ['#...#', '#...#', '#...#', '#.#.#', '#.#.#', '#.#.#', '.#.#.'],
+  X: ['#...#', '#...#', '.#.#.', '..#..', '.#.#.', '#...#', '#...#'],
+  Y: ['#...#', '#...#', '.#.#.', '..#..', '..#..', '..#..', '..#..'],
+  Z: ['#####', '....#', '...#.', '..#..', '.#...', '#....', '#####'],
+};
+
+export const LETTERS = Object.keys(FONT);
+
+// The shape names. Add new shapes only at the end: a statue link keeps
+// the position of the shape in this list.
+export const PICTURE_SHAPES = ['star', 'fish', 'heart', 'duck', 'smiley', 'rocket', 'cat', 'dino', 'car', 'house'];
+export const SHAPE_NAMES = [...PICTURE_SHAPES, ...LETTERS.map((l) => `letter-${l}`)];
+
+// Return the letter of a letter shape, or null.
+export function letterOf(name) {
+  return name.startsWith('letter-') ? name.slice(7) : null;
+}
 
 // The front of the shape points to +z.
 const MAX_HALF_DEPTH = 5;
@@ -51,6 +92,13 @@ const FISH_FIN = [[-0.42, 0.45], [0.1, 0.45], [-0.05, 0.78]];
 const DUCK_TAIL = [[0.55, -0.15], [0.97, 0.12], [0.8, -0.5]];
 const ROCKET_FIN_LEFT = [[-0.26, -0.1], [-0.26, -0.62], [-0.66, -1.02], [-0.66, -0.5]];
 const ROCKET_FIN_RIGHT = ROCKET_FIN_LEFT.map(([u, v]) => [-u, v]);
+
+const CAT_EAR_LEFT = [[-0.44, 0.52], [-0.1, 0.66], [-0.4, 1.0]];
+const CAT_EAR_RIGHT = CAT_EAR_LEFT.map(([u, v]) => [-u, v]);
+const DINO_NECK = [[-0.28, -0.12], [-0.02, -0.02], [-0.46, 0.66], [-0.66, 0.58]];
+const DINO_TAIL = [[0.5, -0.05], [0.55, -0.45], [0.97, -0.52], [0.97, -0.36]];
+const CAR_CABIN = [[-0.52, -0.02], [-0.3, 0.42], [0.36, 0.42], [0.58, -0.02]];
+const HOUSE_ROOF = [[-0.82, 0.08], [0.82, 0.08], [0, 0.86]];
 
 const SHAPES = {
   star: {
@@ -102,10 +150,65 @@ const SHAPES = {
     },
     dent: (u, v) => inEllipse(u, v, 0, 0.1, 0.14, 0.14),
   },
+  cat: {
+    inside: (u, v) =>
+      inEllipse(u, v, 0, 0.3, 0.44, 0.4) ||
+      inEllipse(u, v, 0, -0.45, 0.56, 0.5) ||
+      inEllipse(u, v, 0.64, -0.5, 0.14, 0.36) ||
+      inPolygon(u, v, CAT_EAR_LEFT) ||
+      inPolygon(u, v, CAT_EAR_RIGHT),
+    dent: (u, v) =>
+      inEllipse(u, v, -0.17, 0.36, 0.08, 0.11) ||
+      inEllipse(u, v, 0.17, 0.36, 0.08, 0.11) ||
+      inEllipse(u, v, 0, 0.2, 0.07, 0.06),
+  },
+  dino: {
+    inside: (u, v) =>
+      inEllipse(u, v, 0.15, -0.25, 0.56, 0.34) ||
+      inPolygon(u, v, DINO_NECK) ||
+      inEllipse(u, v, -0.62, 0.68, 0.24, 0.15) ||
+      inPolygon(u, v, DINO_TAIL) ||
+      (u >= -0.26 && u <= 0 && v >= -1.1 && v <= -0.3) ||
+      (u >= 0.28 && u <= 0.54 && v >= -1.1 && v <= -0.3),
+    dent: () => false,
+  },
+  car: {
+    inside: (u, v) =>
+      (Math.abs(u) <= 0.92 && v >= -0.42 && v <= 0) ||
+      inPolygon(u, v, CAR_CABIN) ||
+      inEllipse(u, v, -0.5, -0.46, 0.25, 0.25) ||
+      inEllipse(u, v, 0.5, -0.46, 0.25, 0.25),
+    dent: (u, v) => u >= -0.3 && u <= 0.36 && v >= 0.08 && v <= 0.32,
+  },
+  house: {
+    inside: (u, v) =>
+      (Math.abs(u) <= 0.62 && v >= -0.92 && v <= 0.1) ||
+      inPolygon(u, v, HOUSE_ROOF) ||
+      (u >= 0.34 && u <= 0.56 && v >= 0.3 && v <= 0.76),
+    dent: (u, v) =>
+      (Math.abs(u) <= 0.15 && v <= -0.4) ||
+      (Math.abs(Math.abs(u) - 0.36) <= 0.11 && v >= -0.3 && v <= -0.06),
+  },
 };
 
+// A letter shape: the block letter, larger, with one more voxel around
+// each part. Parts that touch only at a corner then touch at a face, so
+// that the statue does not fall apart.
+function letterShape(letter) {
+  const rows = FONT[letter];
+  const inside = (u, v) => {
+    const col = Math.floor(((u + 0.92) / 1.84) * 5);
+    // The bottom row reaches the pedestal, so that the letter stands on
+    // its own feet.
+    const row = Math.floor(((0.96 - v) / 2.02) * 7);
+    return col >= 0 && col < 5 && row >= 0 && row < 7 && rows[row][col] === '#';
+  };
+  return { inside, dent: () => false, grow: 1 };
+}
+
 function shapeOf(name) {
-  const shape = SHAPES[name];
+  const letter = letterOf(name);
+  const shape = letter && FONT[letter] ? letterShape(letter) : SHAPES[name];
   if (!shape) throw new Error(`Unknown shape: ${name}`);
   return shape;
 }
@@ -129,8 +232,22 @@ export function shapeMask2D(name, size = GRID_SIZE) {
       if (shape.inside(toU(x, size), toV(y, size))) mask[x + size * y] = 1;
     }
   }
+  for (let k = 0; k < (shape.grow ?? 0); k++) grow(mask, size);
   addStand(mask, size);
   return mask;
+}
+
+// Add one cell around each part of the picture (not in the pedestal row).
+function grow(mask, size) {
+  const copy = mask.slice();
+  for (let y = 1; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (copy[x + size * y]) continue;
+      const near = (x > 0 && copy[x - 1 + size * y]) || (x < size - 1 && copy[x + 1 + size * y]) ||
+        (y > 1 && copy[x + size * (y - 1)]) || (y < size - 1 && copy[x + size * (y + 1)]);
+      if (near) mask[x + size * y] = 1;
+    }
+  }
 }
 
 // Add a stem below the lowest part of the shape and a small base on the
@@ -145,7 +262,8 @@ function addStand(mask, size) {
       }
     }
   }
-  if (lowest < 0) return;
+  // A shape that already stands on the pedestal needs no stand.
+  if (lowest < 0 || lowest === 1) return;
   // Find the middle of the voxels in the lowest row.
   let sum = 0;
   let count = 0;

@@ -6,7 +6,7 @@ import { STONES } from '../core/stones.js';
 import { buildVoxelMeshes } from './stone-view.js';
 import { addLights } from './scene.js';
 import { checkerTexture, wallTexture, toonGradient } from './textures.js';
-import { SHAPE_EMOJI } from './icons.js';
+import { shapeIcon } from './icons.js';
 
 const SPACING = 11;
 const STATUE_SCALE = 0.14;
@@ -41,10 +41,13 @@ function badge(shape, stars) {
   else ctx.rect(6, 6, 244, 116);
   ctx.fill();
   ctx.stroke();
-  ctx.font = '64px sans-serif';
+  const icon = shapeIcon(shape);
+  const letter = icon.length === 1 && /[A-Z]/.test(icon);
+  ctx.font = letter ? '900 72px sans-serif' : '64px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(SHAPE_EMOJI[shape] ?? '', 58, 68);
+  ctx.fillStyle = '#3b2a52';
+  ctx.fillText(icon, 58, 70);
   for (let k = 0; k < 3; k++) {
     drawStar(ctx, 128 + k * 44, 64, 20);
     ctx.fillStyle = k < stars ? '#ffd35c' : '#e6e0ee';

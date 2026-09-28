@@ -122,4 +122,14 @@ export const SHAPE_EMOJI = {
   duck: '🦆',
   smiley: '😊',
   rocket: '🚀',
+  cat: '🐱',
+  dino: '🦕',
+  car: '🚗',
+  house: '🏠',
 };
+
+// The picture of a shape: an emoji, or the letter of a letter shape.
+export function shapeIcon(name) {
+  if (!name) return '';
+  return SHAPE_EMOJI[name] ?? (name.startsWith('letter-') ? name.slice(7) : '');
+}

@@ -14,7 +14,7 @@ import { applyHit, planHit } from '../core/carve.js';
 import { removeFloating } from '../core/connect.js';
 import { raycastGrid } from '../core/raycast.js';
 import { History } from '../core/history.js';
-import { buildGhost, SHAPE_NAMES } from '../core/shapes.js';
+import { buildGhost, PICTURE_SHAPES, LETTERS } from '../core/shapes.js';
 import { matchScore, countOutside, FINISH_LIMIT, STAR_LIMITS } from '../core/score.js';
 import { addStatue } from '../core/codec.js';
 import { clearProgress } from '../core/save.js';
@@ -44,7 +44,10 @@ const STONE_LABELS = {
   sand: 'Sand', sandstone: 'Sandstone', chocolate: 'Chocolate', cheese: 'Cheese', ice: 'Ice',
   wood: 'Wood', marble: 'Marble', glass: 'Glass', granite: 'Granite',
 };
-const SHAPE_LABELS = { star: 'Star', fish: 'Fish', heart: 'Heart', duck: 'Duck', smiley: 'Smiley', rocket: 'Rocket' };
+const SHAPE_LABELS = {
+  star: 'Star', fish: 'Fish', heart: 'Heart', duck: 'Duck', smiley: 'Smiley', rocket: 'Rocket',
+  cat: 'Cat', dino: 'Dinosaur', car: 'Car', house: 'House',
+};
 const WORKSHOP_TARGET = new THREE.Vector3(0, 13, 0);
 
 class Game {
@@ -136,13 +139,28 @@ class Game {
 
     const shapeTiles = $('#shape-tiles');
     const shapeColors = ['yellow', 'cyan', 'pink', 'orange', 'green', 'purple'];
-    SHAPE_NAMES.forEach((name, k) => {
+    PICTURE_SHAPES.forEach((name, k) => {
       const button = document.createElement('button');
-      button.className = `tile ${shapeColors[k]}`;
+      button.className = `tile ${shapeColors[k % shapeColors.length]}`;
       button.dataset.shape = name;
-      button.setAttribute('aria-label', name);
+      button.setAttribute('aria-label', SHAPE_LABELS[name]);
       button.innerHTML = `<span class="emoji">${SHAPE_EMOJI[name]}</span><span class="label">${SHAPE_LABELS[name]}</span>`;
       shapeTiles.appendChild(button);
+    });
+    const abc = document.createElement('button');
+    abc.className = 'tile yellow';
+    abc.dataset.action = 'letters';
+    abc.setAttribute('aria-label', 'Letters');
+    abc.innerHTML = '<span class="emoji letter">ABC</span><span class="label">Letters</span>';
+    shapeTiles.appendChild(abc);
+    const letterTiles = $('#letter-tiles');
+    LETTERS.forEach((letter, k) => {
+      const button = document.createElement('button');
+      button.className = `tile ${shapeColors[k % shapeColors.length]}`;
+      button.dataset.shape = `letter-${letter}`;
+      button.setAttribute('aria-label', `Letter ${letter}`);
+      button.innerHTML = `<span class="emoji letter">${letter}</span>`;
+      letterTiles.appendChild(button);
     });
 
     const stoneTiles = $('#stone-tiles');
@@ -201,7 +219,7 @@ class Game {
     for (const el of $$('.screen')) el.classList.toggle('show', el.id === name);
     $('#museum').classList.remove('shared');
     const inWorkshop = name !== 'museum';
-    this.controls.autoRotate = ['menu', 'shapes', 'stones', 'treasures'].includes(name);
+    this.controls.autoRotate = ['menu', 'shapes', 'letters', 'stones', 'treasures'].includes(name);
     this.controls.autoRotateSpeed = 0.8;
     this.controls.enabled = name === 'play' || name === 'museum';
     if (inWorkshop) {
@@ -277,7 +295,13 @@ class Game {
       case 'treasures':
         return this.openTreasures();
       case 'back':
-        return this.show(this.screen === 'stones' && this.mode === 'challenge' ? 'shapes' : 'menu');
+        if (this.screen === 'letters') return this.show('shapes');
+        if (this.screen === 'stones' && this.mode === 'challenge') {
+          return this.show(this.shape?.startsWith('letter-') ? 'letters' : 'shapes');
+        }
+        return this.show('menu');
+      case 'letters':
+        return this.show('letters');
       case 'home':
         return this.goHome();
       case 'sound':
