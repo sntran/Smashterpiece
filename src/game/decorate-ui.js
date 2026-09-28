@@ -3,9 +3,8 @@
 
 import * as THREE from 'three';
 import { planHit } from '../core/carve.js';
-import {
-  planClay, addClay, planPaint, applyPaint, placeSticker, pruneStickers, stickerHolds, faceOf, STICKER_TYPES,
-} from '../core/decorate.js';
+import { planClay, planPaint, faceOf, STICKER_TYPES } from '../core/decorate.js';
+import { makeStep, applyStep, encodeReplay, MAX_STEPS } from '../core/replay.js';
 import { PAINTS } from './palette.js';
 import { STICKER_LOOKS } from './stickers-view.js';
 import { ICONS } from './icons.js';
@@ -55,7 +54,8 @@ export const decorateMethods = {
         button.className = 'option';
         button.dataset.sticker = type;
         button.setAttribute('aria-label', this.t(`sticker.${type}`));
-        button.innerHTML = type === 'eye' ? ICONS.googly : `<span>${STICKER_LOOKS[type].emoji}</span>`;
+        const picture = { eye: ICONS.googly, nonla: ICONS.nonla }[type];
+        button.innerHTML = picture ?? `<span aria-hidden="true">${STICKER_LOOKS[type].emoji}</span>`;
         box.appendChild(button);
       }
     }
@@ -106,11 +106,15 @@ export const decorateMethods = {
   decorate(hit, point) {
     const before = this.snapshot();
     const grid = this.grid;
+    const step = makeStep(this.tool, hit.x, hit.y, hit.z, {
+      face: faceOf(hit.normal), paint: this.paint, sticker: this.stickerType,
+    });
+    const result = applyStep(grid, this.stickers, step, this.stone);
+    if (!result.changed) return this.tool === 'brush' ? undefined : this.sounds.thud();
     let changed = [];
     if (this.tool === 'clay') {
-      changed = addClay(grid, hit.x, hit.y, hit.z, hit.normal, this.hardness);
-      if (changed.length === 0) return this.sounds.thud();
-      this.dropLooseStickers();
+      changed = result.added;
+      this.updateStickers(result);
       this.sounds.plop();
       for (let k = 0; k < 6; k++) {
         const vel = new THREE.Vector3((Math.random() - 0.5) * 6, 3 + Math.random() * 3, (Math.random() - 0.5) * 6);
@@ -118,8 +122,7 @@ export const decorateMethods = {
       }
       this.wobble = Math.max(this.wobble, 0.4);
     } else if (this.tool === 'brush') {
-      changed = applyPaint(grid, hit.x, hit.y, hit.z, this.paint);
-      if (changed.length === 0) return undefined;
+      changed = result.painted;
       this.sounds.swish();
       const color = this.paint ? PAINTS[this.paint - 1].rgb : [1, 1, 1];
       for (let k = 0; k < 8; k++) {
@@ -127,9 +130,8 @@ export const decorateMethods = {
         this.particles.spark(point, vel, 0.25 + Math.random() * 0.25, color, 0.5);
       }
     } else {
-      const sticker = { type: this.stickerType, x: hit.x, y: hit.y, z: hit.z, face: faceOf(hit.normal) };
-      if (!stickerHolds(grid, sticker)) return this.sounds.thud();
-      this.stickers = placeSticker(this.stickers, sticker);
+      const sticker = result.placed;
+      this.stickers = result.stickers;
       this.stickerView.set(this.stickers);
       this.sounds.stickerPop();
       for (let k = 0; k < 8; k++) {
@@ -140,6 +142,7 @@ export const decorateMethods = {
       this.stats.event('sticker', { type: sticker.type });
     }
     this.history.push(before);
+    this.recordStep(step);
     if (this.tool !== 'sticker') {
       this.stoneView.markCells(changed);
       this.stoneView.flush();
@@ -150,11 +153,23 @@ export const decorateMethods = {
   },
 
   // Stickers on removed or covered faces fall off.
-  dropLooseStickers() {
-    const { keep, fallen } = pruneStickers(this.grid, this.stickers);
-    if (fallen.length === 0) return;
-    this.stickers = keep;
-    this.stickerView.drop(fallen);
+  updateStickers(result) {
+    this.stickers = result.stickers;
+    if (result.fallen.length === 0) return;
+    this.stickerView.drop(result.fallen);
     this.sounds.stickerPop();
+  },
+
+  // Keep the step for the time-lapse. A very long carving has no
+  // time-lapse.
+  recordStep(step) {
+    if (!this.steps) return;
+    this.steps.push(step);
+    if (this.steps.length > MAX_STEPS) this.steps = null;
+  },
+
+  // The time-lapse data for the saved game and the Museum.
+  replayData() {
+    return this.steps && this.startCells ? encodeReplay(this.startCells, this.steps) : null;
   },
 };

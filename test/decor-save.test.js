@@ -101,3 +101,13 @@ test('the history keeps objects and gives the last steps', () => {
   history.load([{ n: 'a' }, { n: 'b' }]);
   assert.equal(history.undo().n, 'b');
 });
+
+test('the Museum and the saved game keep the time-lapse data', () => {
+  const grid = createBlock({ size: 4 });
+  const replay = { start: 'AQ==', steps: '' };
+  const record = encodeStatue({ id: 't', size: 4, cells: grid.cells, stone: 'sand', replay });
+  assert.deepEqual(decodeStatue(JSON.parse(JSON.stringify(record))).replay, replay);
+  assert.equal(decodeStatue(encodeStatue({ id: 'n', size: 4, cells: grid.cells, stone: 'sand' })).replay, null);
+  const progress = decodeProgress(JSON.parse(JSON.stringify(encodeProgress({ mode: 'free', stone: 'sand', size: 4, cells: grid.cells, replay }))));
+  assert.deepEqual(progress.replay, replay);
+});

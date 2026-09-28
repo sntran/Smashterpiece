@@ -5,6 +5,8 @@
 // a length (as a variable-length number) and a value. Base64 then changes
 // the bytes into text for localStorage.
 
+import { STICKER_TYPES } from './decorate.js';
+
 export const FORMAT_VERSION = 1;
 export const MUSEUM_KEY = 'smashterpiece.museum';
 export const MUSEUM_LIMIT = 40;
@@ -95,7 +97,9 @@ export function fromBase64(text) {
 
 // Change a statue into a record that JSON can keep. The paint and the
 // stickers are optional. A record without them is smaller.
-export function encodeStatue({ id, size, cells, stone, shape = null, stars = 0, created = 0, paint = null, stickers = [] }) {
+export function encodeStatue({
+  id, size, cells, stone, shape = null, stars = 0, created = 0, paint = null, stickers = [], replay = null,
+}) {
   if (cells.length !== size * size * size) throw new Error('The cell data does not agree with the size.');
   const record = {
     v: FORMAT_VERSION,
@@ -110,7 +114,14 @@ export function encodeStatue({ id, size, cells, stone, shape = null, stars = 0, 
   const painted = encodePaint(cells, paint);
   if (painted) record.paint = painted;
   if (stickers && stickers.length) record.stickers = cleanStickers(stickers, size);
+  if (isReplayData(replay)) record.replay = { start: replay.start, steps: replay.steps };
   return record;
+}
+
+// The time-lapse data: the first block and the steps, as text (see
+// replay.js).
+export function isReplayData(replay) {
+  return !!replay && typeof replay.start === 'string' && typeof replay.steps === 'string';
 }
 
 // Keep only the paint of stone voxels. Return null when there is no paint.
@@ -134,13 +145,12 @@ export function decodePaint(text, length) {
   return paint;
 }
 
-const STICKER_NAMES = ['eye', 'glasses', 'hat', 'bow', 'flower', 'lips', 'star', 'crown'];
 
 // Keep only good stickers, with only the known fields.
 export function cleanStickers(list, size) {
   if (!Array.isArray(list)) return [];
   return list
-    .filter((s) => s && STICKER_NAMES.includes(s.type) && Number.isInteger(s.face) && s.face >= 0 && s.face < 6 &&
+    .filter((s) => s && STICKER_TYPES.includes(s.type) && Number.isInteger(s.face) && s.face >= 0 && s.face < 6 &&
       [s.x, s.y, s.z].every((v) => Number.isInteger(v) && v >= 0 && v < size))
     .slice(0, 60)
     .map(({ type, x, y, z, face }) => ({ type, x, y, z, face }));
@@ -162,6 +172,7 @@ export function decodeStatue(record) {
     created: record.created ?? 0,
     paint: decodePaint(record.paint, cells.length),
     stickers: cleanStickers(record.stickers, size),
+    replay: isReplayData(record.replay) ? record.replay : null,
   };
 }
 

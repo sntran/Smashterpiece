@@ -127,6 +127,15 @@ export const ICONS = {
     <path d="M14 40 V14 H50 V40" fill="none"/>
     <rect x="24" y="22" width="16" height="14" fill="#ffd35c"/>
     <path d="M32 10 V20" stroke-width="4"/>`),
+  nonla: svg(`
+    <path d="M32 8 L60 48 Q32 56 4 48 Z" fill="#fff3c4"/>
+    <path d="M18 30 Q32 34 46 30 M12 40 Q32 45 52 40" fill="none" stroke="#c9a14a" stroke-width="2.5"/>
+    <path d="M16 51 Q32 62 48 51" fill="none" stroke="#d92b4b" stroke-width="3"/>`),
+  film: svg(`
+    <rect x="6" y="14" width="52" height="38" rx="6" fill="#ffd35c"/>
+    <path d="M6 22 H58 M6 44 H58" fill="none"/>
+    <path d="M12 14 V22 M22 14 V22 M32 14 V22 M42 14 V22 M52 14 V22 M12 44 V52 M22 44 V52 M32 44 V52 M42 44 V52 M52 44 V52" stroke-width="3"/>
+    <path d="M27 27 L39 33 L27 39 Z" fill="#d92b4b"/>`),
   gear: svg(`
     <path d="M28 4 H36 L38 12 L44 15 L51 10 L56 15 L51 22 L54 28 L62 30 V36 L54 38 L51 44 L56 51 L51 56 L44 51 L38 54 L36 62 H28 L26 54 L20 51 L13 56 L8 51 L13 44 L10 38 L2 36 V30 L10 28 L13 22 L8 15 L13 10 L20 15 L26 12 Z" fill="#c9c3d6"/>
     <circle cx="32" cy="33" r="10" fill="#fff"/>`),

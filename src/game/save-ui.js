@@ -6,6 +6,7 @@ import { hardnessOf } from '../core/stones.js';
 import { buildGhost } from '../core/shapes.js';
 import { countOutside } from '../core/score.js';
 import { saveProgress, loadProgress, makeBackup, parseBackup, mergeBackup, SAVED_UNDO_STEPS } from '../core/save.js';
+import { decodeReplay } from '../core/replay.js';
 import { STONE_LOOKS } from './palette.js';
 import { $, offerFile } from './dom.js';
 
@@ -31,6 +32,7 @@ export const saveMethods = {
         cells: this.grid.cells,
         paint: this.grid.paint,
         stickers: this.stickers,
+        replay: this.replayData(),
         undo: this.history.last(SAVED_UNDO_STEPS),
         treasures: this.treasures,
         outsideStart: this.outsideStart,
@@ -72,6 +74,10 @@ export const saveMethods = {
     this.stickerView.clear();
     this.stickerView.set(this.stickers);
     this.treasures = saved.treasures;
+    // A game from an older version has no time-lapse.
+    const replay = decodeReplay(saved.replay, saved.size);
+    this.startCells = replay ? replay.start : null;
+    this.steps = replay ? replay.steps : null;
     this.outsideStart = saved.outsideStart || (this.ghost ? countOutside(this.grid, this.ghost.mask) : 0);
     this.history.clear();
     this.history.load(saved.undo);

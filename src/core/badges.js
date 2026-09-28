@@ -23,7 +23,9 @@ export const BADGES = [
   { id: 'silly-face', check: (s) => s.eyes >= 2 },
   { id: 'sharer', check: (s) => s.shared >= 1 },
   { id: 'treasure-hunter', check: (s) => s.treasureKinds >= 5 },
-  { id: 'treasure-master', check: (s) => s.treasureKinds >= TREASURES.length },
+  // The first version of the game had 18 kinds of treasure.
+  { id: 'treasure-master', check: (s) => s.treasureKinds >= 18 },
+  { id: 'treasure-legend', check: (s) => s.treasureKinds >= TREASURES.length },
 ];
 
 export const BADGE_IDS = BADGES.map((b) => b.id);
@@ -40,6 +42,9 @@ export function emptyStats() {
     eyes: 0,
     shared: 0,
     treasureKinds: 0,
+    // The badges that the player has. A badge stays, also when a new
+    // version of the game makes its check harder.
+    kept: [],
   };
 }
 
@@ -90,7 +95,13 @@ export function recordEvent(stats, name, data = {}) {
 }
 
 export function earnedBadges(stats) {
-  return BADGES.filter((b) => b.check(stats)).map((b) => b.id);
+  const kept = stats.kept ?? [];
+  return BADGES.filter((b) => kept.includes(b.id) || b.check(stats)).map((b) => b.id);
+}
+
+// Return the stats with all the earned badges in the kept list.
+export function keepBadges(stats) {
+  return { ...stats, kept: earnedBadges(stats) };
 }
 
 // Return the badges that the new stats earn and the old stats do not.

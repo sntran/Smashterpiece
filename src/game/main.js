@@ -5,12 +5,11 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 import { createBlock, PEDESTAL, EMPTY } from '../core/grid.js';
-import { hardnessOf, crumblesOf, hasHoles, STONE_NAMES } from '../core/stones.js';
+import { hardnessOf, hasHoles, STONE_NAMES } from '../core/stones.js';
 import { addHoles } from '../core/holes.js';
 import { makeRandom, randomInt } from '../core/random.js';
 import { placeTreasures, collectUncovered, loadCollection } from '../core/treasures.js';
-import { crumbleSand } from '../core/sand.js';
-import { applyHit } from '../core/carve.js';
+import { makeStep, applyStep } from '../core/replay.js';
 import { removeFloating } from '../core/connect.js';
 import { raycastGrid } from '../core/raycast.js';
 import { History } from '../core/history.js';
@@ -40,6 +39,7 @@ import { decorateMethods, DECOR_TOOLS } from './decorate-ui.js';
 import { accessMethods } from './access-ui.js';
 import { langMethods } from './lang-ui.js';
 import { hintMethods } from './hints-ui.js';
+import { replayMethods } from './replay-ui.js';
 import { Music } from './music.js';
 import { setupUpdates, applyUpdateIfReady } from './update.js';
 import { StickerView } from './stickers-view.js';
@@ -136,6 +136,7 @@ class Game {
         treasures: 'chest', continue: 'play', parents: 'gear', export: 'download', import: 'upload',
         close: 'cross', 'close-share': 'cross', share: 'share', 'send-link': 'share', 'copy-link': 'link',
         'add-shared': 'addMuseum', photo: 'camera', print: 'printer', 'close-about': 'cross',
+        replay: 'film', 'stop-replay': 'cross',
       }[el.dataset.action];
       if (icon) el.innerHTML = ICONS[icon] + el.innerHTML;
       if (el.dataset.label) el.insertAdjacentHTML('beforeend', `<span class="label">${el.dataset.label}</span>`);
@@ -220,9 +221,9 @@ class Game {
     for (const el of $$('.screen')) el.classList.toggle('show', el.id === name);
     $('#museum').classList.remove('shared');
     const inWorkshop = name !== 'museum';
-    this.controls.autoRotate = ['menu', 'shapes', 'letters', 'stones', 'treasures'].includes(name);
+    this.controls.autoRotate = ['menu', 'shapes', 'letters', 'stones', 'treasures', 'replay'].includes(name);
     this.controls.autoRotateSpeed = 0.8;
-    this.controls.enabled = name === 'play' || name === 'museum';
+    this.controls.enabled = name === 'play' || name === 'museum' || name === 'replay';
     if (inWorkshop) {
       this.controls.minDistance = 25;
       this.controls.maxDistance = Math.max(140, this.fitDistance() * 1.4);
@@ -311,6 +312,10 @@ class Game {
         return this.copyLink();
       case 'add-shared':
         return this.addShared();
+      case 'replay':
+        return this.startReplay();
+      case 'stop-replay':
+        return this.stopReplay();
       case 'photo':
         return this.savePhoto();
       case 'print':
@@ -455,6 +460,9 @@ class Game {
     this.treasureView.clear();
     this.stickers = [];
     this.stickerView.clear();
+    // The time-lapse starts from this block.
+    this.startCells = this.grid.cells.slice();
+    this.steps = [];
     this.outsideStart = this.ghost ? countOutside(this.grid, this.ghost.mask) : 0;
     this.playing = true;
     clearProgress(this.storage);
@@ -581,16 +589,17 @@ class Game {
     const point = this.stoneView.toWorld(hit.x + 0.5 + n.x * 0.5, hit.y + 0.5 + n.y * 0.5, hit.z + 0.5 + n.z * 0.5);
     if (DECOR_TOOLS.includes(this.tool)) return this.decorate(hit, point);
     const before = this.snapshot();
-    const result = applyHit(grid, this.tool, hit.x, hit.y, hit.z, this.easyMode);
-    if (result.removed.length === 0 && result.cracked.length === 0) {
+    const step = makeStep(this.tool, hit.x, hit.y, hit.z, { easy: this.easyMode });
+    const result = applyStep(grid, this.stickers, step, this.stone);
+    if (!result.changed) {
       this.sounds.thud();
       this.particles.puff(point, new THREE.Vector3(0, 2, 0), 1.2, [1, 1, 1]);
       this.shake = Math.max(this.shake, 0.15);
       return undefined;
     }
     this.history.push(before);
-    const crumbled = crumblesOf(this.stone) && result.removed.length > 0 ? crumbleSand(grid, hit.x, hit.y, hit.z) : [];
-    const pieces = result.removed.length > 0 ? removeFloating(grid) : [];
+    this.recordStep(step);
+    const { crumbled, pieces } = result;
     this.stoneView.markCells(result.removed);
     this.stoneView.markCells(crumbled);
     this.stoneView.markCells(result.cracked);
@@ -601,7 +610,7 @@ class Game {
       this.stats.event('piece', { size: piece.length });
     }
     for (const t of collectUncovered(grid, this.treasures)) this.findTreasure(t);
-    this.dropLooseStickers();
+    this.updateStickers(result);
     this.stickerView.shake(this.tool === 'hammer' ? 1 : 0.4);
     this.vibrate(this.tool === 'hammer' ? 35 : 15);
     if (result.removed.length === 0) this.announce(this.t('news.crack'));
@@ -715,6 +724,8 @@ class Game {
     const state = this.history.undo();
     if (!state) return;
     this.restoreSnapshot(state);
+    // Each undo step has one step of the time-lapse.
+    if (this.steps) this.steps.pop();
     this.stoneView.markAll();
     this.stoneView.flush();
     this.sounds.undo();
@@ -788,6 +799,7 @@ class Game {
         cells: this.grid.cells,
         paint: this.grid.paint,
         stickers: this.stickers,
+        replay: this.replayData(),
         stone: this.stone,
         shape: this.mode === 'challenge' ? this.shape : null,
         stars,
@@ -909,6 +921,7 @@ class Game {
       this.pieces.update(dt);
       this.particles.update(dt);
       this.treasureView.update(dt);
+      this.updateReplay(dt);
       this.stickerView.update(dt, time, this.settings?.reduceMotion);
       if (this.screen === 'play') this.showHints(dt);
       // The stone wobbles like jelly after a hit.
@@ -952,6 +965,7 @@ class Game {
 Object.assign(
   Game.prototype,
   saveMethods, shareMethods, museumMethods, collectionMethods, decorateMethods, accessMethods, hintMethods, langMethods,
+  replayMethods,
 );
 
 function start() {
