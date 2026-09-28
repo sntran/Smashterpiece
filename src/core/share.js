@@ -6,14 +6,21 @@
 //
 // The data is a header and the voxels, compressed with deflate and written
 // as base64url text:
-//   byte 0  the format version
+//   byte 0  the format version (1 or 2)
 //   byte 1  the stone (index in STONE_NAMES)
 //   byte 2  the shape (index in SHAPE_NAMES, 255 for no shape)
 //   byte 3  the stars (0 to 3)
 //   byte 4  the grid size
+//   byte 5  (version 2 only) flags: 1 for paint, 2 for stickers
 //   then    one bit for each cell above the pedestal layer (1 for stone),
 //           in the order of the VoxelGrid index. The first cell is in
 //           the lowest bit of the first byte.
+//   then    (flag 1) one byte of paint for each stone voxel, in the same
+//           order
+//   then    (flag 2) the number of stickers, and 5 bytes for each sticker:
+//           type, x, y, z, face
+// A statue without paint and stickers uses version 1, so that the link
+// is short.
 // The pedestal layer is always full, so the link does not keep it. The
 // link also does not keep the cracks: each stone voxel gets its full
 // hardness again.
@@ -21,9 +28,10 @@
 import { EMPTY, PEDESTAL } from './grid.js';
 import { STONE_NAMES, hardnessOf } from './stones.js';
 import { SHAPE_NAMES } from './shapes.js';
-import { toBase64, fromBase64 } from './codec.js';
+import { toBase64, fromBase64, cleanStickers } from './codec.js';
+import { STICKER_TYPES } from './decorate.js';
 
-export const SHARE_VERSION = 1;
+export const SHARE_VERSION = 2;
 export const SHARE_PREFIX = '#s=';
 const HEADER = 5;
 const NO_SHAPE = 255;
@@ -78,26 +86,50 @@ export function inflate(bytes, limit) {
   return runStream(new DecompressionStream('deflate-raw'), bytes, limit);
 }
 
+// Visit the cells above the pedestal layer in the link order.
+function forEachCell(size, visit) {
+  let k = 0;
+  for (let z = 0; z < size; z++) {
+    for (let y = 1; y < size; y++) {
+      for (let x = 0; x < size; x++) visit(x + size * (y + size * z), k++);
+    }
+  }
+}
+
 // Make the text for the link. Return a promise.
-export async function encodeShare({ size, cells, stone, shape = null, stars = 0 }) {
+export async function encodeShare({ size, cells, stone, shape = null, stars = 0, paint = null, stickers = [] }) {
   const stoneIndex = STONE_NAMES.indexOf(stone);
   if (stoneIndex < 0) throw new Error(`Unknown stone: ${stone}`);
   if (cells.length !== size * size * size || size > 255) throw new Error('The cell data does not agree with the size.');
   const shapeIndex = shape ? SHAPE_NAMES.indexOf(shape) : NO_SHAPE;
-  const raw = new Uint8Array(HEADER + bitBytes(size));
-  raw[0] = SHARE_VERSION;
+  const isStone = (v) => v !== EMPTY && v !== PEDESTAL;
+  const paintBytes = [];
+  if (paint) forEachCell(size, (i) => { if (isStone(cells[i])) paintBytes.push(paint[i]); });
+  const hasPaint = paintBytes.some((v) => v > 0);
+  const kept = cleanStickers(stickers, size);
+  const flags = (hasPaint ? 1 : 0) | (kept.length ? 2 : 0);
+  const header = flags ? HEADER + 1 : HEADER;
+  const extra = (hasPaint ? paintBytes.length : 0) + (kept.length ? 1 + kept.length * 5 : 0);
+  const raw = new Uint8Array(header + bitBytes(size) + extra);
+  raw[0] = flags ? 2 : 1;
   raw[1] = stoneIndex;
   raw[2] = shapeIndex < 0 ? NO_SHAPE : shapeIndex;
   raw[3] = Math.max(0, Math.min(3, stars | 0));
   raw[4] = size;
-  let k = 0;
-  for (let z = 0; z < size; z++) {
-    for (let y = 1; y < size; y++) {
-      for (let x = 0; x < size; x++) {
-        const v = cells[x + size * (y + size * z)];
-        if (v !== EMPTY && v !== PEDESTAL) raw[HEADER + (k >>> 3)] |= 1 << (k & 7);
-        k++;
-      }
+  if (flags) raw[5] = flags;
+  forEachCell(size, (i, k) => {
+    if (isStone(cells[i])) raw[header + (k >>> 3)] |= 1 << (k & 7);
+  });
+  let pos = header + bitBytes(size);
+  if (hasPaint) {
+    raw.set(paintBytes, pos);
+    pos += paintBytes.length;
+  }
+  if (kept.length) {
+    raw[pos++] = kept.length;
+    for (const s of kept) {
+      raw.set([STICKER_TYPES.indexOf(s.type), s.x, s.y, s.z, s.face], pos);
+      pos += 5;
     }
   }
   return toBase64Url(await deflate(raw));
@@ -109,30 +141,53 @@ export async function decodeShare(text, maxSize = 64) {
   const packed = fromBase64Url(text);
   let raw;
   try {
-    raw = await inflate(packed, HEADER + bitBytes(maxSize));
+    // The largest statue: all cells, all paint, and all stickers.
+    raw = await inflate(packed, HEADER + 1 + bitBytes(maxSize) * 9 + 1 + 60 * 5);
   } catch {
     throw new Error('The link is not correct.');
   }
-  if (raw.length < HEADER || raw[0] !== SHARE_VERSION) throw new Error('The link is not correct.');
+  const version = raw[0];
+  if (raw.length < HEADER || (version !== 1 && version !== 2)) throw new Error('The link is not correct.');
+  const flags = version === 2 ? raw[5] : 0;
+  const header = version === 2 ? HEADER + 1 : HEADER;
   const stone = STONE_NAMES[raw[1]];
   const shape = raw[2] === NO_SHAPE ? null : SHAPE_NAMES[raw[2]];
   const stars = raw[3];
   const size = raw[4];
   if (!stone || shape === undefined || stars > 3 || size < 1 || size > maxSize) throw new Error('The link is not correct.');
-  if (raw.length !== HEADER + bitBytes(size)) throw new Error('The link is not correct.');
+  if (flags > 3 || raw.length < header + bitBytes(size)) throw new Error('The link is not correct.');
   const hardness = hardnessOf(stone);
   const cells = new Uint8Array(size ** 3);
-  let k = 0;
+  const paint = new Uint8Array(size ** 3);
   for (let z = 0; z < size; z++) {
     for (let x = 0; x < size; x++) cells[x + size * size * z] = PEDESTAL;
-    for (let y = 1; y < size; y++) {
-      for (let x = 0; x < size; x++) {
-        if ((raw[HEADER + (k >>> 3)] >>> (k & 7)) & 1) cells[x + size * (y + size * z)] = hardness;
-        k++;
-      }
+  }
+  const stoneOrder = [];
+  forEachCell(size, (i, k) => {
+    if ((raw[header + (k >>> 3)] >>> (k & 7)) & 1) {
+      cells[i] = hardness;
+      stoneOrder.push(i);
+    }
+  });
+  let pos = header + bitBytes(size);
+  if (flags & 1) {
+    if (raw.length < pos + stoneOrder.length) throw new Error('The link is not correct.');
+    for (const i of stoneOrder) {
+      const v = raw[pos++];
+      if (v > 8) throw new Error('The link is not correct.');
+      paint[i] = v;
     }
   }
-  return { size, cells, stone, shape, stars };
+  const stickers = [];
+  if (flags & 2) {
+    const count = raw[pos++] ?? 0;
+    if (raw.length < pos + count * 5) throw new Error('The link is not correct.');
+    for (let n = 0; n < count; n++, pos += 5) {
+      stickers.push({ type: STICKER_TYPES[raw[pos]], x: raw[pos + 1], y: raw[pos + 2], z: raw[pos + 3], face: raw[pos + 4] });
+    }
+  }
+  if (pos !== raw.length) throw new Error('The link is not correct.');
+  return { size, cells, stone, shape, stars, paint, stickers: cleanStickers(stickers, size) };
 }
 
 // Find the text of a shared statue in the fragment of a link, or null.

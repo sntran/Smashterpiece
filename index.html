@@ -10,6 +10,8 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <meta name="theme-color" content="#6ec8ff">
+  <meta name="author" content="Trần Nguyễn Sơn">
+  <meta name="description" content="A stone carving game. Made for Trần Nhật An Nhiên, who had the idea.">
   <title>Smashterpiece</title>
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./style.css">
@@ -23,12 +25,22 @@
   </script>
 </head>
 <body>
-  <canvas id="view"></canvas>
+  <canvas id="view" role="img" aria-label="Smashterpiece"></canvas>
+  <div id="announce" class="sr-only" aria-live="polite"></div>
+  <div id="announce-now" class="sr-only" aria-live="assertive"></div>
+  <div id="aim-cursor" hidden aria-hidden="true"></div>
+  <div id="fps" hidden aria-hidden="true"></div>
+  <div id="hint" class="hint" hidden aria-hidden="true">
+    <div class="hint-ripple"></div>
+    <div class="hint-hand">👆</div>
+    <div class="hint-words"></div>
+  </div>
   <canvas id="confetti"></canvas>
 
   <div id="loading" class="screen show">
     <div class="logo">Smashterpiece</div>
     <div class="spinner"></div>
+    <div class="loading-note">For <span lang="vi">An Nhiên</span> ❤️</div>
   </div>
 
   <div id="menu" class="screen">
@@ -42,13 +54,21 @@
         <span class="badge" id="treasure-badge"></span>
       </button>
     </div>
-    <button class="round small corner-bl" data-action="parents" aria-label="Save file"></button>
+    <button class="round small corner-bl" data-action="parents" aria-label="Settings"></button>
+    <button class="dedication" data-action="about" aria-label="For An Nhiên. About this game.">
+      <span aria-hidden="true">❤️</span> For <span lang="vi">An Nhiên</span>
+    </button>
     <button class="round small corner-br" data-action="sound" aria-label="Sound"></button>
   </div>
 
-  <div id="shapes" class="screen">
+  <div id="shapes" class="screen picker">
     <button class="round corner-tl" data-action="back" aria-label="Back"></button>
-    <div class="tiles grid3" id="shape-tiles"></div>
+    <div class="tiles" id="shape-tiles"></div>
+  </div>
+
+  <div id="letters" class="screen picker">
+    <button class="round corner-tl" data-action="back" aria-label="Back"></button>
+    <div class="tiles" id="letter-tiles"></div>
   </div>
 
   <div id="stones" class="screen">
@@ -61,6 +81,8 @@
     <div class="book">
       <div class="book-head"><span class="book-icon" data-icon="chest"></span><span id="treasure-count"></span></div>
       <div class="book-grid" id="treasure-grid"></div>
+      <div class="book-head"><span class="book-badge" aria-hidden="true">🏅</span><span id="badge-count"></span></div>
+      <div class="book-grid" id="badge-grid"></div>
     </div>
   </div>
 
@@ -76,10 +98,33 @@
       <button class="round" data-action="save" aria-label="Save to the Museum"></button>
       <button class="round" data-action="new" aria-label="New stone"></button>
     </div>
-    <div class="toolbar">
-      <button class="tool" data-tool="hammer" aria-label="Hammer"></button>
-      <button class="tool" data-tool="chisel" aria-label="Point chisel"></button>
-      <button class="tool" data-tool="file" aria-label="File"></button>
+    <div class="easy-pad" id="easy-pad" hidden role="group" aria-label="Easy controls">
+      <div class="pad-grid">
+        <button class="pad" data-pad="turn-left" aria-label="Turn left">↺</button>
+        <button class="pad" data-pad="up" aria-label="Aim up">▲</button>
+        <button class="pad" data-pad="turn-right" aria-label="Turn right">↻</button>
+        <button class="pad" data-pad="left" aria-label="Aim left">◀</button>
+        <button class="pad hit" data-pad="hit" aria-label="Hit"></button>
+        <button class="pad" data-pad="right" aria-label="Aim right">▶</button>
+        <button class="pad" data-pad="zoom-out" aria-label="Zoom out">−</button>
+        <button class="pad" data-pad="down" aria-label="Aim down">▼</button>
+        <button class="pad" data-pad="zoom-in" aria-label="Zoom in">+</button>
+      </div>
+      <div class="pad-row">
+        <button class="pad" data-pad="tilt-up" aria-label="Look from higher">⤒</button>
+        <button class="pad" data-pad="tilt-down" aria-label="Look from lower">⤓</button>
+      </div>
+    </div>
+    <div class="tool-dock">
+      <div class="tool-options" id="tool-options" hidden></div>
+      <div class="toolbar" role="toolbar" aria-label="Tools">
+        <button class="tool" data-tool="hammer" aria-label="Hammer"></button>
+        <button class="tool" data-tool="chisel" aria-label="Point chisel"></button>
+        <button class="tool" data-tool="file" aria-label="File"></button>
+        <button class="tool" data-tool="clay" aria-label="Clay"></button>
+        <button class="tool" data-tool="brush" aria-label="Paint brush"></button>
+        <button class="tool" data-tool="sticker" aria-label="Stickers"></button>
+      </div>
     </div>
   </div>
 
@@ -100,7 +145,7 @@
     </div>
   </div>
 
-  <div id="celebrate" class="overlay">
+  <div id="celebrate" class="overlay" role="dialog" aria-modal="true" aria-label="You made a Smashterpiece!">
     <div class="card">
       <div class="headline">You made a Smashterpiece!</div>
       <div class="stars big" id="result-stars"></div>
@@ -112,7 +157,7 @@
     </div>
   </div>
 
-  <div id="confirm" class="overlay">
+  <div id="confirm" class="overlay" role="alertdialog" aria-modal="true" aria-label="Are you sure?">
     <div class="card">
       <div class="big-icon" id="confirm-icon"></div>
       <div class="row">
@@ -122,10 +167,12 @@
     </div>
   </div>
 
-  <div id="backup" class="overlay">
-    <div class="card backup-card">
+  <div id="backup" class="overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="card backup-card settings-card">
       <button class="round small close" data-action="close" aria-label="Close"></button>
-      <div class="backup-title">Save file</div>
+      <h2 class="backup-title" id="settings-title">Settings</h2>
+      <div class="toggles" id="setting-toggles"></div>
+      <h2 class="backup-title">Save file</h2>
       <p class="backup-text">Keep the statues, the treasures and the game in a file. Load the file on this device or on a different device. Nothing on the device is removed.</p>
       <div class="row">
         <button class="tile green" data-action="export" data-label="Save" aria-label="Save to a file"></button>
@@ -136,17 +183,32 @@
     </div>
   </div>
 
-  <div id="share" class="overlay">
+  <div id="share" class="overlay" role="dialog" aria-modal="true" aria-label="Share statue">
     <div class="card backup-card">
       <button class="round small close" data-action="close-share" aria-label="Close"></button>
-      <div class="backup-title">Share statue</div>
+      <h2 class="backup-title">Share statue</h2>
       <canvas id="share-qr" aria-label="QR code of the link"></canvas>
       <p class="backup-text" id="share-text"></p>
       <div class="row">
         <button class="tile green" data-action="send-link" data-label="Send" aria-label="Send the link"></button>
         <button class="tile cyan" data-action="copy-link" data-label="Copy link" aria-label="Copy the link"></button>
       </div>
+      <div class="row">
+        <button class="tile yellow" data-action="photo" data-label="Photo" aria-label="Save a photo of the statue"></button>
+        <button class="tile purple" data-action="print" data-label="3D print" aria-label="Save a file for a 3D printer"></button>
+      </div>
       <p class="backup-text" id="share-result" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <div id="about" class="overlay" role="dialog" aria-modal="true" aria-labelledby="about-title">
+    <div class="card about-card">
+      <button class="round small close" data-action="close-about" aria-label="Close"></button>
+      <div class="about-heart" aria-hidden="true">❤️</div>
+      <h2 class="about-title" id="about-title">Smashterpiece</h2>
+      <p class="about-line">For my son, <span class="about-name" lang="vi">Trần Nhật An Nhiên</span>.</p>
+      <p class="about-line">This game was his idea.</p>
+      <p class="about-from">With love, from Dad,<br><span class="about-name" lang="vi">Trần Nguyễn Sơn</span></p>
     </div>
   </div>
 

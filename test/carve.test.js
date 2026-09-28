@@ -84,3 +84,13 @@ test('the file does not dig into a flat surface', () => {
 test('toolTargets rejects an unknown tool', () => {
   assert.throws(() => toolTargets(new VoxelGrid(4), 'spoon', 1, 1, 1));
 });
+
+test('the easy mode makes the hammer one voxel larger', () => {
+  const normal = createBlock({ hardness: 1 });
+  const easy = createBlock({ hardness: 1 });
+  const a = applyHit(normal, 'hammer', 16, 16, 16).removed.length;
+  const b = applyHit(easy, 'hammer', 16, 16, 16, true).removed.length;
+  assert.equal(a, 123);
+  assert.ok(b > a);
+  assert.equal(b, sphereCells(createBlock(), 16, 16, 16, 4).length);
+});

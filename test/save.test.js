@@ -59,7 +59,7 @@ test('a bad game in progress gives null', () => {
   storage.setItem(PROGRESS_KEY, '{bad');
   assert.equal(loadProgress(storage), null);
   const record = encodeProgress(carvedGame());
-  for (const change of [{ stone: 'lava' }, { mode: 'race' }, { shape: 'cat' }, { treasures: [{ id: 'gem', x: 99, y: 0, z: 0 }] }]) {
+  for (const change of [{ stone: 'lava' }, { mode: 'race' }, { shape: 'lion' }, { treasures: [{ id: 'gem', x: 99, y: 0, z: 0 }] }]) {
     storage.setItem(PROGRESS_KEY, JSON.stringify({ ...record, ...change }));
     assert.equal(loadProgress(storage), null, JSON.stringify(change));
   }

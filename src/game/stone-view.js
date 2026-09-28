@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { buildMesh } from '../core/mesher.js';
 import { PEDESTAL, EMPTY } from '../core/grid.js';
-import { stoneColors, hash3, isClear } from './palette.js';
+import { stoneColors, hash3, isClear, PAINTS } from './palette.js';
 import { stoneAtlas, toonGradient, ATLAS_TILES } from './textures.js';
 
 export const CHUNK = 8;
@@ -70,12 +70,27 @@ export function geometryFrom(data) {
 // Make the mesh options for a set of cells.
 //   valueAt(x, y, z)  the cell value (0 for empty)
 //   size              the grid size (for the color table)
-export function voxelMeshOptions({ valueAt, size, stone, hardness, ghostMask = null }) {
+const PAINT_LINEAR = PAINTS.map((p) => p.rgb.map(toLinear));
+
+// The linear color of a paint (1 to 8).
+export function paintColor(paint) {
+  return PAINT_LINEAR[paint - 1];
+}
+
+export function voxelMeshOptions({ valueAt, size, stone, hardness, ghostMask = null, paint = null }) {
   const colors = linearColors(stone, size);
   return {
     solid: (x, y, z) => valueAt(x, y, z) !== EMPTY,
     color: (x, y, z, out) => {
       const i = x + size * (y + size * z);
+      const p = paint ? paint[i] : 0;
+      if (p) {
+        const c = PAINT_LINEAR[p - 1];
+        out[0] = c[0];
+        out[1] = c[1];
+        out[2] = c[2];
+        return;
+      }
       out[0] = colors[i * 3];
       out[1] = colors[i * 3 + 1];
       out[2] = colors[i * 3 + 2];
@@ -88,6 +103,8 @@ export function voxelMeshOptions({ valueAt, size, stone, hardness, ghostMask = n
       const row = Math.floor(hash3(x, y, z, face) * ATLAS_TILES);
       if (v === PEDESTAL) return row * ATLAS_TILES + 3;
       const damage = Math.max(0, Math.min(2, hardness - v));
+      // Painted voxels without cracks use the smooth tile.
+      if (damage === 0 && paint && paint[x + size * (y + size * z)]) return row * ATLAS_TILES + 3;
       return row * ATLAS_TILES + damage;
     },
     tiles: ATLAS_TILES,
@@ -99,8 +116,8 @@ export function voxelMeshOptions({ valueAt, size, stone, hardness, ghostMask = n
 // Make the meshes for the voxels in a box. For a clear stone, the
 // pedestal is a separate solid mesh, so that it stays solid.
 //   box  { x0, y0, z0, x1, y1, z1 } (x1, y1, z1 are not included)
-export function buildVoxelMeshes({ box, valueAt, size, stone, hardness, ghostMask = null }) {
-  const options = voxelMeshOptions({ valueAt, size, stone, hardness, ghostMask });
+export function buildVoxelMeshes({ box, valueAt, size, stone, hardness, ghostMask = null, paint = null }) {
+  const options = voxelMeshOptions({ valueAt, size, stone, hardness, ghostMask, paint });
   const meshes = [];
   const add = (data, material) => {
     if (data.faces === 0) return;
@@ -197,6 +214,7 @@ export class StoneView {
       stone: this.stone,
       hardness: this.hardness,
       ghostMask: this.tint,
+      paint: this.grid.paint,
     });
     if (meshes.length === 0) return;
     for (const mesh of meshes) this.inner.add(mesh);
@@ -268,34 +286,40 @@ export class StoneView {
 
   makePreview() {
     const geometry = new THREE.BoxGeometry(1.08, 1.08, 1.08);
-    geometry.translate(0.5, 0.5, 0.5);
     const material = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.55, depthWrite: false });
-    const mesh = new THREE.InstancedMesh(geometry, material, 160);
+    const mesh = new THREE.InstancedMesh(geometry, material, 300);
     mesh.count = 0;
     mesh.renderOrder = 5;
     mesh.frustumCulled = false;
-    mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(160 * 3), 3);
+    mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(300 * 3), 3);
     return mesh;
   }
 
-  // Show the voxels that the next hit will remove (yellow) or crack (orange).
+  // Show what the next hit does. The voxels that break are full yellow
+  // boxes. The voxels that only crack are smaller orange boxes, so that
+  // the size also shows the difference (for players who do not see the
+  // colors well). New clay is green. Paint has the color of the paint.
   showPreview(plan) {
     const mesh = this.preview;
     const matrix = new THREE.Matrix4();
     const removeColor = new THREE.Color(0xfff200);
     const crackColor = new THREE.Color(0xff7a00);
+    const addColor = new THREE.Color(0x3ddc84);
+    const paintColor = new THREE.Color(plan.paint ? PAINTS[plan.paint - 1].css : '#ffffff');
     const xyz = [0, 0, 0];
     let n = 0;
-    const put = (i, color) => {
+    const put = (i, color, scale) => {
       if (n >= mesh.instanceMatrix.count) return;
       this.grid.coords(i, xyz);
-      matrix.makeTranslation(xyz[0] - 0.04, xyz[1] - 0.04, xyz[2] - 0.04);
+      matrix.makeScale(scale, scale, scale).setPosition(xyz[0] + 0.5, xyz[1] + 0.5, xyz[2] + 0.5);
       mesh.setMatrixAt(n, matrix);
       mesh.setColorAt(n, color);
       n++;
     };
-    for (const i of plan.removed) put(i, removeColor);
-    for (const i of plan.cracked) put(i, crackColor);
+    for (const i of plan.removed) put(i, removeColor, 1);
+    for (const i of plan.cracked) put(i, crackColor, 0.7);
+    for (const i of plan.added ?? []) put(i, addColor, 0.9);
+    for (const i of plan.painted ?? []) put(i, paintColor, 1.02);
     mesh.count = n;
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
@@ -305,9 +329,14 @@ export class StoneView {
     this.preview.count = 0;
   }
 
+  // Strong colors: a clearer preview and a clearer ghost shape.
+  setStrong(strong) {
+    this.strong = strong;
+  }
+
   update(time) {
-    this.preview.material.opacity = 0.55 + 0.2 * Math.sin(time * 10);
-    if (this.ghostMesh) this.ghostMesh.material.opacity = 0.34 + 0.08 * Math.sin(time * 2.5);
+    this.preview.material.opacity = this.strong ? 0.85 : 0.55 + 0.2 * Math.sin(time * 10);
+    if (this.ghostMesh) this.ghostMesh.material.opacity = this.strong ? 0.55 : 0.34 + 0.08 * Math.sin(time * 2.5);
   }
 
   // Change grid coordinates to world coordinates.

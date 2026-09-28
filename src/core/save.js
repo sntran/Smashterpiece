@@ -9,13 +9,31 @@
 // All functions use a storage object with getItem and setItem, for
 // example window.localStorage.
 
-import { rleEncode, rleDecode, toBase64, fromBase64, loadMuseum, saveMuseum, decodeStatue, MUSEUM_LIMIT } from './codec.js';
+import {
+  rleEncode, rleDecode, toBase64, fromBase64, loadMuseum, saveMuseum, decodeStatue, MUSEUM_LIMIT,
+  encodePaint, decodePaint, cleanStickers,
+} from './codec.js';
 import { loadCollection, COLLECTION_KEY, TREASURE_IDS } from './treasures.js';
 import { STONES } from './stones.js';
 import { SHAPE_NAMES } from './shapes.js';
 
 export const PROGRESS_KEY = 'smashterpiece.current';
 export const PROGRESS_VERSION = 1;
+// The number of undo steps that the saved game keeps.
+export const SAVED_UNDO_STEPS = 10;
+
+function encodeStep({ cells, paint = null, stickers = [] }, size) {
+  const step = { data: toBase64(rleEncode(cells)) };
+  const painted = encodePaint(cells, paint);
+  if (painted) step.paint = painted;
+  if (stickers.length) step.stickers = cleanStickers(stickers, size);
+  return step;
+}
+
+function decodeStep(step, size) {
+  const cells = rleDecode(fromBase64(String(step.data)), size * size * size);
+  return { cells, paint: decodePaint(step.paint, cells.length), stickers: cleanStickers(step.stickers, size) };
+}
 export const BACKUP_APP = 'smashterpiece';
 export const BACKUP_VERSION = 1;
 
@@ -23,7 +41,7 @@ export const BACKUP_VERSION = 1;
 export function encodeProgress(state) {
   const { mode, stone, shape = null, size, cells, treasures = [], outsideStart = 0, finished = false, saved = 0 } = state;
   if (cells.length !== size * size * size) throw new Error('The cell data does not agree with the size.');
-  return {
+  const record = {
     v: PROGRESS_VERSION,
     mode,
     stone,
@@ -35,6 +53,11 @@ export function encodeProgress(state) {
     treasures: treasures.map(({ id, x, y, z, found }) => ({ id, x, y, z, found: !!found })),
     data: toBase64(rleEncode(cells)),
   };
+  const painted = encodePaint(cells, state.paint);
+  if (painted) record.paint = painted;
+  if (state.stickers && state.stickers.length) record.stickers = cleanStickers(state.stickers, size);
+  if (state.undo && state.undo.length) record.undo = state.undo.slice(-SAVED_UNDO_STEPS).map((s) => encodeStep(s, size));
+  return record;
 }
 
 // Change a record back into the game in progress. Throw an error when
@@ -62,6 +85,9 @@ export function decodeProgress(record) {
     finished: !!record.finished,
     saved: Number(record.saved) || 0,
     treasures: treasures.map(({ id, x, y, z, found }) => ({ id, x, y, z, found: !!found })),
+    paint: decodePaint(record.paint, cells.length),
+    stickers: cleanStickers(record.stickers, size),
+    undo: Array.isArray(record.undo) ? record.undo.map((s) => decodeStep(s, size)) : [],
   };
 }
 

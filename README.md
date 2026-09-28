@@ -7,6 +7,15 @@ becomes a statue.
 The game runs in the browser. It does not use a server, ads, links to
 other sites, or data collection. All data stays in the browser.
 
+## Dedication
+
+For my son, **Trần Nhật An Nhiên**. This game was his idea.
+
+With love, from Dad, **Trần Nguyễn Sơn**.
+
+The start screen has a small "For An Nhiên" button. It opens the
+dedication in the game.
+
 ## How to play
 
 Each button has a large picture. The buttons on the start screen and
@@ -21,7 +30,8 @@ the stone picker also have a short name, for players who can read.
    - **Treasures** (treasure chest): look at the treasures that you
      found. The red badge shows how many kinds you have.
 2. In challenge mode, select a shape: star, fish, heart, duck, smiley
-   face, or rocket.
+   face, rocket, cat, dinosaur, car, or house. The **ABC** button opens
+   the letters A to Z.
 3. Select a material. The number of hammers on the button shows the
    number of hits that each piece needs:
    - Sand (light yellow): 1 hit. Sand cannot hang in the air. Thin parts
@@ -43,13 +53,23 @@ the stone picker also have a short name, for players who can read.
    - **Hammer**: removes a large ball of stone.
    - **Point chisel**: removes a small ball of stone.
    - **File**: removes small bumps and makes the surface smooth.
+   - **Clay**: adds a small ball of material. Use it to repair a
+     mistake.
+   - **Paint brush**: paints the surface. Select one of 8 colors, or the
+     red X to remove the paint.
+   - **Stickers**: puts a googly eye, glasses, a hat, a bow, a flower,
+     lips, a star or a crown on the statue. A sticker falls off when its
+     block breaks.
 5. Point at the stone. Yellow blocks show the stone that the tool
-   removes. Orange blocks show the stone that only gets cracks.
+   removes. Smaller orange blocks show the stone that only gets cracks.
+   Green blocks show new clay.
 6. Tap or click to hit.
 7. Drag to turn the camera. Pinch or scroll to zoom.
 
 A tap that moves less than 8 pixels is a hit. A larger move turns the
 camera.
+
+The first time, a hand shows how to hit and how to turn the stone.
 
 The game works on phones, tablets and computers. On a phone in
 portrait, the buttons are in two rows at the top. On a phone in
@@ -104,7 +124,7 @@ remove the data of an installed app.
 | Picture | Function |
 | --- | --- |
 | House | Go back to the start screen. |
-| Arrow | Undo the last hit (up to 30 steps). |
+| Arrow | Undo the last change (up to 30 steps). The saved game keeps the last 10 steps. |
 | Museum | Save the statue to the Museum. |
 | Block with a sparkle | Start with a new stone (free mode only). |
 | Ghost | Show or hide the ghost shape (challenge mode only). |
@@ -115,10 +135,50 @@ carve. The stars at the top fill when the stone looks more like the
 ghost. The trophy button shows when the first star is full. Push the
 trophy to finish and get 1, 2 or 3 stars.
 
-On a keyboard, you can also use these keys:
+### Badges
 
-- `1`, `2`, `3`: select the hammer, the point chisel, or the file.
-- `Ctrl+Z` or `Cmd+Z`: undo.
+The game gives 13 badges, for example for the first hit, a big crash,
+all the materials, 3 stars, a letter, 5 statues, painting, 2 googly
+eyes, sharing, and treasures. The **Treasures** screen shows the badges
+under the treasures. A badge that you do not have yet shows how to
+earn it.
+
+## Accessibility
+
+All children must be able to play. The gear button at the bottom left
+of the start screen opens **Settings**:
+
+| Setting | Function |
+| --- | --- |
+| Talk (on) | The game says the name of each button and the news, for example "You found a Gem!". It uses the speech of the device. |
+| Easy controls | Big on-screen buttons to aim, hit, turn and zoom. The player does not need to drag or tap on the stone. A switch that works as a key or a click can use all the buttons. |
+| Easy challenges | The hammer and the chisel are larger, and the stars come sooner. |
+| Less motion | No camera shake, no wobble, and less confetti. The game turns this on when the device asks for less motion. |
+| Strong colors | Darker lines, a clearer preview and a clearer ghost shape. The game turns this on when the device asks for more contrast. |
+| Big buttons | All the buttons are larger. |
+| Music (on) | Soft music in the background. |
+| Vibration (on) | The device shakes a little on each hit (Android only). |
+| Frame rate | Shows the frames each second, to check the speed on a device. |
+
+Also:
+
+- **Screen readers:** each button has a name. The news goes to the
+  screen reader (with `aria-live`). The dialogs are real dialogs.
+- **Color:** the preview shows the difference between "breaks" and
+  "cracks" with the size of the box too, not only with the color.
+- **Keyboard:** the game works with only a keyboard:
+
+  | Key | Function |
+  | --- | --- |
+  | `Tab`, `Enter` | Move between the buttons and push a button. |
+  | Arrow keys | Move the aim cursor. |
+  | `Enter` or `Space` | Hit at the aim cursor. |
+  | `Shift` + arrow keys, or `A` `D` `W` `S` | Turn the camera. |
+  | `+` and `-` | Zoom. |
+  | `1` to `6` | Select the hammer, chisel, file, clay, brush or stickers. |
+  | `G` | Show or hide the ghost shape. |
+  | `U`, `Ctrl+Z` or `Cmd+Z` | Undo. |
+  | `Escape` | Close a dialog, or go back. |
 
 ### The Museum
 
@@ -136,6 +196,9 @@ short enough for a phone camera.
 
 - **Send** opens the share sheet of the phone or tablet.
 - **Copy link** puts the link on the clipboard.
+- **Photo** saves a picture of the statue with a frame.
+- **3D print** saves an STL file. A 3D printer app (a slicer) can open
+  it. One block is 2 millimeters, so the statue is 64 millimeters high.
 
 When a person opens the link, the game shows the statue in the Museum
 room with an **Add to my Museum** button. The same link adds the statue
@@ -144,7 +207,8 @@ only one time.
 The statue is in the part of the link after `#`. The browser does not
 send this part to the server, so the statue goes only to the people
 that get the link. The link keeps the shape, the material, the
-challenge shape and the stars. It does not keep the cracks. A neat
+challenge shape, the stars, the paint and the stickers. It does not
+keep the cracks. A neat
 statue makes a link of about 200 to 300 characters. A statue with a lot
 of detail makes a longer link and does not get a QR code.
 
@@ -244,6 +308,10 @@ The modules in `src/core/` are:
 | `save.js` | The automatic save, and the save file (backup) for all data. |
 | `share.js` | The statue link: one statue, compressed into the link. |
 | `qr.js` | The QR code encoder for the statue link. |
+| `decorate.js` | The clay, the paint and the stickers. |
+| `badges.js` | The badges and the numbers that they use. |
+| `settings.js` | The settings, for example for accessibility. |
+| `stl.js` | The 3D print file (binary STL). |
 | `random.js` | A random number generator with a seed. |
 | `carve.js` | The voxel removal for each tool. |
 | `connect.js` | The connection check. It finds the pieces that fall. |

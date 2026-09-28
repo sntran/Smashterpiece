@@ -93,10 +93,11 @@ export function fromBase64(text) {
   return out.subarray(0, pos);
 }
 
-// Change a statue into a record that JSON can keep.
-export function encodeStatue({ id, size, cells, stone, shape = null, stars = 0, created = 0 }) {
+// Change a statue into a record that JSON can keep. The paint and the
+// stickers are optional. A record without them is smaller.
+export function encodeStatue({ id, size, cells, stone, shape = null, stars = 0, created = 0, paint = null, stickers = [] }) {
   if (cells.length !== size * size * size) throw new Error('The cell data does not agree with the size.');
-  return {
+  const record = {
     v: FORMAT_VERSION,
     id,
     size,
@@ -106,6 +107,43 @@ export function encodeStatue({ id, size, cells, stone, shape = null, stars = 0, 
     created,
     data: toBase64(rleEncode(cells)),
   };
+  const painted = encodePaint(cells, paint);
+  if (painted) record.paint = painted;
+  if (stickers && stickers.length) record.stickers = cleanStickers(stickers, size);
+  return record;
+}
+
+// Keep only the paint of stone voxels. Return null when there is no paint.
+export function encodePaint(cells, paint) {
+  if (!paint) return null;
+  const kept = new Uint8Array(cells.length);
+  let any = false;
+  for (let i = 0; i < cells.length; i++) {
+    if (paint[i] && cells[i] !== 0 && cells[i] !== 255) {
+      kept[i] = paint[i];
+      any = true;
+    }
+  }
+  return any ? toBase64(rleEncode(kept)) : null;
+}
+
+export function decodePaint(text, length) {
+  if (!text) return new Uint8Array(length);
+  const paint = rleDecode(fromBase64(String(text)), length);
+  if (paint.some((v) => v > 8)) throw new Error('The saved paint is not correct.');
+  return paint;
+}
+
+const STICKER_NAMES = ['eye', 'glasses', 'hat', 'bow', 'flower', 'lips', 'star', 'crown'];
+
+// Keep only good stickers, with only the known fields.
+export function cleanStickers(list, size) {
+  if (!Array.isArray(list)) return [];
+  return list
+    .filter((s) => s && STICKER_NAMES.includes(s.type) && Number.isInteger(s.face) && s.face >= 0 && s.face < 6 &&
+      [s.x, s.y, s.z].every((v) => Number.isInteger(v) && v >= 0 && v < size))
+    .slice(0, 60)
+    .map(({ type, x, y, z, face }) => ({ type, x, y, z, face }));
 }
 
 // Change a record back into a statue. Throw an error when the record is bad.
@@ -122,6 +160,8 @@ export function decodeStatue(record) {
     shape: record.shape ?? null,
     stars: record.stars ?? 0,
     created: record.created ?? 0,
+    paint: decodePaint(record.paint, cells.length),
+    stickers: cleanStickers(record.stickers, size),
   };
 }
 

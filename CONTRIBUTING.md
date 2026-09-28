@@ -28,6 +28,20 @@ messages.
 - When you change a game file, change the `CACHE` name in `sw.js`, so
   that the installed app gets a clean copy.
 
+## Accessibility
+
+All children must be able to play. For each change, check these points:
+
+- Each button has an `aria-label`. A picture alone is not enough for a
+  screen reader.
+- The game works with only a keyboard, and with only the easy controls.
+- The news of the game goes through `announce()`, so that screen readers
+  and the Talk setting get it.
+- Color is never the only difference. Use a size, a shape or a picture
+  too.
+- New motion stops when the Less motion setting is on.
+- A new pop-up does not cover a dialog that is open.
+
 ## Tests
 
 Run the tests before each commit:

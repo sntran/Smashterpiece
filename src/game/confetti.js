@@ -11,6 +11,8 @@ export class Confetti {
   }
 
   burst(count = 160) {
+    // With less motion, there is less confetti.
+    if (this.reduced) count = Math.round(count / 4);
     const w = window.innerWidth;
     const h = window.innerHeight;
     const dpr = Math.min(2, window.devicePixelRatio || 1);

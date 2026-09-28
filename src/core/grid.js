@@ -5,16 +5,20 @@
 //   1 to 254  the cell is stone. The value is the number of hits that
 //             the cell can take before it breaks.
 //   255       the cell is part of the pedestal. The player cannot remove it.
+//
+// A second array keeps the paint of each cell: 0 for no paint, or the
+// number of a paint color.
 
 export const GRID_SIZE = 32;
 export const EMPTY = 0;
 export const PEDESTAL = 255;
 
 export class VoxelGrid {
-  constructor(size = GRID_SIZE, cells = null) {
+  constructor(size = GRID_SIZE, cells = null, paint = null) {
     this.size = size;
     this.cells = cells ?? new Uint8Array(size * size * size);
-    if (this.cells.length !== size * size * size) {
+    this.paint = paint ?? new Uint8Array(size * size * size);
+    if (this.cells.length !== size * size * size || this.paint.length !== this.cells.length) {
       throw new Error('The cell data does not agree with the grid size.');
     }
   }
@@ -51,7 +55,7 @@ export class VoxelGrid {
   }
 
   clone() {
-    return new VoxelGrid(this.size, this.cells.slice());
+    return new VoxelGrid(this.size, this.cells.slice(), this.paint.slice());
   }
 
   copyFrom(cells) {
