@@ -11,7 +11,7 @@ test('the defaults follow the device', () => {
   assert.equal(defaultSettings().reduceMotion, false);
   assert.equal(defaultSettings({ reduceMotion: true }).reduceMotion, true);
   assert.equal(defaultSettings({ contrast: true }).contrast, true);
-  assert.equal(DEFAULTS.speak, true);
+  assert.equal(DEFAULTS.speak, false);
 });
 
 test('the settings are saved and loaded', () => {
@@ -31,7 +31,7 @@ test('bad settings get the defaults', () => {
   const storage = memoryStorage();
   storage.setItem(SETTINGS_KEY, '{"speak": "yes", "music": false, "rocket": true}');
   const settings = loadSettings(storage);
-  assert.equal(settings.speak, true);
+  assert.equal(settings.speak, false);
   assert.equal(settings.music, false);
   assert.equal(settings.rocket, undefined);
   storage.setItem(SETTINGS_KEY, 'not json');

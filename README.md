@@ -150,7 +150,7 @@ of the start screen opens **Settings**:
 
 | Setting | Function |
 | --- | --- |
-| Talk (on) | The game says the name of each button and the news, for example "You found a Gem!". It uses the speech of the device. |
+| Talk | The game says the name of each button and the news, for example "You found a Gem!". It uses the speech of the device. Turn it on for a child who does not read yet, or who reads with difficulty. Do not turn it on with VoiceOver or TalkBack: the screen reader already says the same words. |
 | Easy controls | Big on-screen buttons to aim, hit, turn and zoom. The player does not need to drag or tap on the stone. A switch that works as a key or a click can use all the buttons. |
 | Easy challenges | The hammer and the chisel are larger, and the stars come sooner. |
 | Less motion | No camera shake, no wobble, and less confetti. The game turns this on when the device asks for less motion. |
