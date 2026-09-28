@@ -1329,3 +1329,182 @@ body.reduce-motion .flash.go {
   margin-bottom: -60px;
   z-index: 2;
 }
+
+/* The hand of the first-game hints. */
+.hint {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  z-index: 16;
+  pointer-events: none;
+}
+
+.hint[hidden] {
+  display: none;
+}
+
+.hint-hand {
+  position: absolute;
+  left: -10px;
+  top: 0;
+  font-size: 72px;
+  line-height: 1;
+  filter: drop-shadow(0 4px 0 rgba(59, 42, 82, 0.5));
+}
+
+.hint.tap .hint-hand {
+  animation: hint-tap 1.2s ease-in-out infinite;
+}
+
+.hint.drag .hint-hand {
+  animation: hint-drag 1.8s ease-in-out infinite;
+}
+
+.hint-ripple {
+  position: absolute;
+  left: -28px;
+  top: -28px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 6px solid white;
+  opacity: 0;
+}
+
+.hint.tap .hint-ripple {
+  animation: hint-ripple 1.2s ease-out infinite;
+}
+
+.hint-words {
+  position: absolute;
+  left: 50%;
+  top: 96px;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(80vw, 420px);
+  text-align: center;
+  background: white;
+  border: 5px solid var(--ink);
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: clamp(18px, 3.4vmin, 26px);
+  font-weight: 900;
+  box-shadow: 0 6px 0 var(--ink);
+}
+
+@keyframes hint-tap {
+  0%, 100% { transform: translateY(18px); }
+  45% { transform: translateY(-4px); }
+  55% { transform: translateY(-4px) scale(0.92); }
+}
+
+@keyframes hint-ripple {
+  0%, 45% { transform: scale(0.3); opacity: 0; }
+  55% { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+@keyframes hint-drag {
+  0%, 100% { transform: translateX(-70px); }
+  50% { transform: translateX(70px); }
+}
+
+/* The dedication. */
+.dedication {
+  position: absolute;
+  bottom: max(22px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.85);
+  border: 4px solid var(--ink);
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-weight: 900;
+  font-size: clamp(15px, 2.4vmin, 20px);
+  white-space: nowrap;
+  box-shadow: 0 5px 0 var(--ink);
+}
+
+.loading-note {
+  font-weight: 900;
+  font-size: clamp(18px, 3vmin, 26px);
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 999px;
+  padding: 6px 16px;
+}
+
+.about-card {
+  position: relative;
+  max-width: min(520px, calc(100vw - 32px));
+  text-align: center;
+  gap: 10px;
+}
+
+.about-card .close {
+  position: absolute;
+  top: -18px;
+  right: -18px;
+  background: var(--red);
+}
+
+.about-heart {
+  font-size: clamp(56px, 12vmin, 88px);
+  line-height: 1;
+  animation: bounce 2.4s ease-in-out infinite;
+}
+
+.about-title {
+  margin: 0;
+  font-size: clamp(30px, 6vmin, 48px);
+  font-weight: 900;
+  color: var(--gold);
+  -webkit-text-stroke: 1.5px var(--ink);
+  paint-order: stroke fill;
+}
+
+.about-line {
+  margin: 0;
+  font-size: clamp(20px, 3.6vmin, 28px);
+  line-height: 1.35;
+}
+
+.about-name {
+  font-weight: 900;
+  color: var(--red);
+}
+
+.about-from {
+  margin: 8px 0 0;
+  font-size: clamp(18px, 3vmin, 24px);
+  line-height: 1.4;
+}
+
+/* Phones in portrait: the easy pad goes to the top right, under the
+   buttons, so that the paint colors and the stickers do not cover it. */
+@media (max-width: 600px) {
+  .easy-pad {
+    bottom: auto;
+    top: calc(max(16px, env(safe-area-inset-top)) + var(--btn) + 22px);
+  }
+
+  body.easy-controls .top-center {
+    left: max(16px, env(safe-area-inset-left));
+    transform: none;
+  }
+
+  .option,
+  body.big-buttons .option {
+    width: 46px;
+    height: 46px;
+    border-width: 3px;
+    font-size: 26px;
+  }
+
+  .tool-options {
+    gap: 6px;
+    padding: 6px 8px;
+  }
+}

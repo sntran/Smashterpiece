@@ -4,7 +4,8 @@
 import { addStatue, loadMuseum, decodeStatue, encodeStatue } from '../core/codec.js';
 import { encodeShare, decodeShare, shareTextFrom, shareId, SHARE_PREFIX } from '../core/share.js';
 import { makeQr } from '../core/qr.js';
-import { $ } from './dom.js';
+import { statueToStl } from '../core/stl.js';
+import { $, offerFile } from './dom.js';
 
 // Draw a QR code on a canvas, with a white border of 4 modules. Each
 // module gets the same whole number of pixels, so that the code is sharp.
@@ -37,7 +38,6 @@ export const shareMethods = {
     if (!record) return;
     const statue = decodeStatue(record);
     const text = await encodeShare(statue);
-    this.stats.event('share');
     this.shareUrl = `${location.origin}${location.pathname}${SHARE_PREFIX}${text}`;
     // A phone camera reads small QR codes best. Show the code only when
     // the link is short enough.
@@ -51,6 +51,41 @@ export const shareMethods = {
     $('[data-action="send-link"]').style.display = navigator.share ? '' : 'none';
     $('#share-result').textContent = '';
     $('#share').classList.add('show');
+  },
+
+  // Save a photo of the selected statue in the Museum, with a frame.
+  async savePhoto() {
+    $('#share').classList.remove('show');
+    this.renderer.render(this.museum.scene, this.camera);
+    const shot = this.renderer.domElement;
+    const border = Math.round(Math.min(shot.width, shot.height) * 0.05);
+    const canvas = document.createElement('canvas');
+    canvas.width = shot.width + border * 2;
+    canvas.height = shot.height + border * 3;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffd35c';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(shot, border, border);
+    ctx.fillStyle = '#3b2a52';
+    ctx.font = `900 ${Math.round(border * 1.1)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('My Smashterpiece', canvas.width / 2, canvas.height - border);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    this.sounds.snap();
+    this.flash('camera', true);
+    if (blob) await offerFile(new File([blob], 'my-smashterpiece.png', { type: 'image/png' }), 'My Smashterpiece');
+  },
+
+  // Save a file for a 3D printer (STL). One voxel is 2 millimeters.
+  async savePrint() {
+    const id = this.museum.selectedId();
+    const record = loadMuseum(this.storage).find((r) => r.id === id);
+    if (!record) return;
+    const statue = decodeStatue(record);
+    const file = new File([statueToStl(statue.size, statue.cells)], 'my-smashterpiece.stl', { type: 'model/stl' });
+    const result = await offerFile(file, 'My Smashterpiece');
+    $('#share-result').textContent = result === 'closed' ? '' : 'The 3D print file is ready. A 3D printer app can open it.';
   },
 
   async sendLink() {

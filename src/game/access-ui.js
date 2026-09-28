@@ -247,6 +247,7 @@ export const accessMethods = {
   // Turn the camera around the target. `dAz` turns left or right. `dPolar`
   // tilts up or down.
   orbitBy(dAz, dPolar) {
+    this.hintAfterDrag();
     const offset = this.camera.position.clone().sub(this.controls.target);
     const s = new THREE.Spherical().setFromVector3(offset);
     s.theta += dAz;

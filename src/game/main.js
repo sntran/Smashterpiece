@@ -38,6 +38,7 @@ import { museumMethods } from './museum-ui.js';
 import { collectionMethods, RARITY, StatsKeeper } from './collection-ui.js';
 import { decorateMethods, DECOR_TOOLS } from './decorate-ui.js';
 import { accessMethods } from './access-ui.js';
+import { hintMethods } from './hints-ui.js';
 import { Music } from './music.js';
 import { StickerView } from './stickers-view.js';
 
@@ -140,7 +141,7 @@ class Game {
         keep: 'play', prev: 'left', next: 'right', delete: 'trash', yes: 'check', no: 'cross',
         treasures: 'chest', continue: 'play', parents: 'gear', export: 'download', import: 'upload',
         close: 'cross', 'close-share': 'cross', share: 'share', 'send-link': 'share', 'copy-link': 'link',
-        'add-shared': 'addMuseum',
+        'add-shared': 'addMuseum', photo: 'camera', print: 'printer', 'close-about': 'cross',
       }[el.dataset.action];
       if (icon) el.innerHTML = ICONS[icon] + el.innerHTML;
       if (el.dataset.label) el.insertAdjacentHTML('beforeend', `<span class="label">${el.dataset.label}</span>`);
@@ -300,16 +301,29 @@ class Game {
         return $('#backup').classList.add('show');
       case 'close':
         return $('#backup').classList.remove('show');
+      case 'about':
+        this.sounds.select();
+        $('#about').classList.add('show');
+        return this.say('For my son, Trần Nhật An Nhiên. This game was his idea. With love, from Dad.');
+      case 'close-about':
+        return $('#about').classList.remove('show');
       case 'share':
         return this.shareStatue();
       case 'close-share':
-        return $('#share').classList.remove('show');
+        $('#share').classList.remove('show');
+        // The badge comes after the panel closes, so that it does not
+        // cover the QR code.
+        return this.stats.event('share');
       case 'send-link':
         return this.sendLink();
       case 'copy-link':
         return this.copyLink();
       case 'add-shared':
         return this.addShared();
+      case 'photo':
+        return this.savePhoto();
+      case 'print':
+        return this.savePrint();
       case 'export':
         return this.exportBackup();
       case 'import':
@@ -466,6 +480,7 @@ class Game {
     this.setTool(this.tool);
     this.updateButtons();
     this.updateScore(true);
+    this.startHints();
   }
 
   async goHome() {
@@ -600,6 +615,7 @@ class Game {
     this.vibrate(this.tool === 'hammer' ? 35 : 15);
     if (result.removed.length === 0) this.announce('Crack!');
     this.stats.event('hit', { stone: this.stone });
+    this.hintAfterHit();
 
     this.effects(result, point, n, before);
     if (crumbled.length > 0) this.pourSand(crumbled);
@@ -822,6 +838,7 @@ class Game {
       if (this.tap && this.tap.id === e.pointerId) {
         if (Math.hypot(e.clientX - this.tap.x, e.clientY - this.tap.y) > TAP_LIMIT) {
           this.tap = null;
+          this.hintAfterDrag();
           this.hideAim();
         }
       } else if (e.pointerType === 'mouse' && this.pointers.size === 0 && this.screen === 'play') {
@@ -911,6 +928,7 @@ class Game {
 
     // Shake the camera only for this frame.
     this.updateFps(dt);
+    this.updateHint(dt);
     if (this.settings.reduceMotion) {
       this.shake = 0;
       this.wobble = 0;
@@ -940,7 +958,10 @@ class Game {
   }
 }
 
-Object.assign(Game.prototype, saveMethods, shareMethods, museumMethods, collectionMethods, decorateMethods, accessMethods);
+Object.assign(
+  Game.prototype,
+  saveMethods, shareMethods, museumMethods, collectionMethods, decorateMethods, accessMethods, hintMethods,
+);
 
 function start() {
   try {

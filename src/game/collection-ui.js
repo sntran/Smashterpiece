@@ -78,10 +78,15 @@ export const collectionMethods = {
     this.stats.event('treasures', { kinds: Object.keys(loadCollection(this.storage)).length });
   },
 
-  // Show a new badge, a short time after other news.
+  // Show a new badge, a short time after other news. While a dialog is
+  // open, wait: the badge must not cover the dialog.
   showBadge(id) {
     const look = BADGE_LOOKS[id];
-    setTimeout(() => {
+    const show = () => {
+      if ($('.overlay.show')) {
+        setTimeout(show, 700);
+        return;
+      }
       const box = $('#found');
       $('.found-emoji', box).textContent = look.emoji;
       $('.found-name', box).textContent = look.name;
@@ -92,7 +97,8 @@ export const collectionMethods = {
       setTimeout(() => { $('.new-badge', box).textContent = 'NEW!'; }, 2300);
       this.sounds.treasure('rare');
       this.announce(`New badge: ${look.name}!`, true);
-    }, 900);
+    };
+    setTimeout(show, 900);
   },
 
   // Show small sparkles near the treasures that are close to the air.

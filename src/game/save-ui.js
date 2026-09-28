@@ -7,7 +7,7 @@ import { buildGhost } from '../core/shapes.js';
 import { countOutside } from '../core/score.js';
 import { saveProgress, loadProgress, makeBackup, parseBackup, mergeBackup, SAVED_UNDO_STEPS } from '../core/save.js';
 import { STONE_LOOKS } from './palette.js';
-import { $ } from './dom.js';
+import { $, offerFile } from './dom.js';
 
 // The time from the last hit to the automatic save, in milliseconds.
 const AUTOSAVE_DELAY = 800;
@@ -100,26 +100,9 @@ export const saveMethods = {
     const name = `smashterpiece-${date}.json`;
     const text = JSON.stringify(makeBackup(this.storage));
     const file = new File([text], name, { type: 'application/json' });
-    try {
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Smashterpiece' });
-        $('#backup-result').textContent = 'The file is ready.';
-        return;
-      }
-    } catch (error) {
-      // The parent closed the share sheet. Use a download instead only
-      // when the share failed for a different reason.
-      if (error && error.name === 'AbortError') return;
-    }
-    const url = URL.createObjectURL(file);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = name;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-    $('#backup-result').textContent = 'The file is in your downloads.';
+    const result = await offerFile(file);
+    if (result === 'shared') $('#backup-result').textContent = 'The file is ready.';
+    if (result === 'downloaded') $('#backup-result').textContent = 'The file is in your downloads.';
   },
 
   // Load a backup file and add its data to this device.

@@ -19,3 +19,28 @@ export function safeStorage() {
     };
   }
 }
+
+// Give a file to the player. On a phone or a tablet, the share sheet
+// opens, so that a parent can keep the file (for example in Files or in
+// Google Drive). Otherwise the browser downloads the file.
+// Return 'shared', 'downloaded' or 'closed'.
+export async function offerFile(file, title = 'Smashterpiece') {
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title });
+      return 'shared';
+    }
+  } catch (error) {
+    // The player closed the share sheet.
+    if (error && error.name === 'AbortError') return 'closed';
+  }
+  const url = URL.createObjectURL(file);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = file.name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  return 'downloaded';
+}

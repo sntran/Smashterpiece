@@ -10,6 +10,8 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <meta name="theme-color" content="#6ec8ff">
+  <meta name="author" content="Trần Nguyễn Sơn">
+  <meta name="description" content="A stone carving game. Made for Trần Nhật An Nhiên, who had the idea.">
   <title>Smashterpiece</title>
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./style.css">
@@ -28,11 +30,17 @@
   <div id="announce-now" class="sr-only" aria-live="assertive"></div>
   <div id="aim-cursor" hidden aria-hidden="true"></div>
   <div id="fps" hidden aria-hidden="true"></div>
+  <div id="hint" class="hint" hidden aria-hidden="true">
+    <div class="hint-ripple"></div>
+    <div class="hint-hand">👆</div>
+    <div class="hint-words"></div>
+  </div>
   <canvas id="confetti"></canvas>
 
   <div id="loading" class="screen show">
     <div class="logo">Smashterpiece</div>
     <div class="spinner"></div>
+    <div class="loading-note">For <span lang="vi">An Nhiên</span> ❤️</div>
   </div>
 
   <div id="menu" class="screen">
@@ -47,6 +55,9 @@
       </button>
     </div>
     <button class="round small corner-bl" data-action="parents" aria-label="Settings"></button>
+    <button class="dedication" data-action="about" aria-label="For An Nhiên. About this game.">
+      <span aria-hidden="true">❤️</span> For <span lang="vi">An Nhiên</span>
+    </button>
     <button class="round small corner-br" data-action="sound" aria-label="Sound"></button>
   </div>
 
@@ -182,7 +193,22 @@
         <button class="tile green" data-action="send-link" data-label="Send" aria-label="Send the link"></button>
         <button class="tile cyan" data-action="copy-link" data-label="Copy link" aria-label="Copy the link"></button>
       </div>
+      <div class="row">
+        <button class="tile yellow" data-action="photo" data-label="Photo" aria-label="Save a photo of the statue"></button>
+        <button class="tile purple" data-action="print" data-label="3D print" aria-label="Save a file for a 3D printer"></button>
+      </div>
       <p class="backup-text" id="share-result" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <div id="about" class="overlay" role="dialog" aria-modal="true" aria-labelledby="about-title">
+    <div class="card about-card">
+      <button class="round small close" data-action="close-about" aria-label="Close"></button>
+      <div class="about-heart" aria-hidden="true">❤️</div>
+      <h2 class="about-title" id="about-title">Smashterpiece</h2>
+      <p class="about-line">For my son, <span class="about-name" lang="vi">Trần Nhật An Nhiên</span>.</p>
+      <p class="about-line">This game was his idea.</p>
+      <p class="about-from">With love, from Dad,<br><span class="about-name" lang="vi">Trần Nguyễn Sơn</span></p>
     </div>
   </div>
 
