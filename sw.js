@@ -4,7 +4,7 @@
 // Each request gets the copy from the cache first. At the same time, the
 // service worker gets a new copy from the network for the next visit.
 
-const CACHE = 'smashterpiece-v2';
+const CACHE = 'smashterpiece-v3';
 const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.170.0/';
 
 // All files that the game needs. The test "the service worker keeps all
@@ -25,10 +25,12 @@ const FILES = [
   './src/core/history.js',
   './src/core/holes.js',
   './src/core/mesher.js',
+  './src/core/qr.js',
   './src/core/random.js',
   './src/core/raycast.js',
   './src/core/sand.js',
   './src/core/save.js',
+  './src/core/share.js',
   './src/core/score.js',
   './src/core/shapes.js',
   './src/core/stones.js',

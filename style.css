@@ -811,6 +811,50 @@ body.flashwhite::after {
   font-size: calc(var(--tile) * 0.12);
 }
 
+.shared-bar {
+  position: absolute;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  display: none;
+  justify-content: center;
+}
+
+#museum.shared .shared-bar {
+  display: flex;
+}
+
+#museum.shared .museum-bar,
+#museum.shared .empty {
+  display: none !important;
+}
+
+.shared-bar .tile {
+  --tile: clamp(130px, 22vmin, 180px);
+}
+
+.tile .label {
+  white-space: normal;
+  text-align: center;
+}
+
+#share-qr {
+  image-rendering: pixelated;
+  border-radius: 12px;
+}
+
+#share-qr[hidden] {
+  display: none;
+}
+
+#share .tile {
+  --tile: clamp(96px, 16vmin, 130px);
+}
+
+#share-result:empty {
+  display: none;
+}
+
 .corner-bl {
   position: absolute;
   bottom: max(16px, env(safe-area-inset-bottom));

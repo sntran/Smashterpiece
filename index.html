@@ -91,8 +91,12 @@
     </div>
     <div class="museum-bar" id="museum-bar">
       <button class="round" data-action="prev" aria-label="Previous statue"></button>
+      <button class="round green" data-action="share" aria-label="Share statue"></button>
       <button class="round red" data-action="delete" aria-label="Delete statue"></button>
       <button class="round" data-action="next" aria-label="Next statue"></button>
+    </div>
+    <div class="shared-bar" id="shared-bar">
+      <button class="tile green" data-action="add-shared" data-label="Add to my Museum" aria-label="Add to my Museum"></button>
     </div>
   </div>
 
@@ -129,6 +133,20 @@
       </div>
       <p class="backup-text" id="backup-result" aria-live="polite"></p>
       <input type="file" id="import-file" accept=".json,application/json" hidden>
+    </div>
+  </div>
+
+  <div id="share" class="overlay">
+    <div class="card backup-card">
+      <button class="round small close" data-action="close-share" aria-label="Close"></button>
+      <div class="backup-title">Share statue</div>
+      <canvas id="share-qr" aria-label="QR code of the link"></canvas>
+      <p class="backup-text" id="share-text"></p>
+      <div class="row">
+        <button class="tile green" data-action="send-link" data-label="Send" aria-label="Send the link"></button>
+        <button class="tile cyan" data-action="copy-link" data-label="Copy link" aria-label="Copy the link"></button>
+      </div>
+      <p class="backup-text" id="share-result" aria-live="polite"></p>
     </div>
   </div>
 

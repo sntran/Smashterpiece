@@ -128,6 +128,29 @@ statue. To delete a statue, push the trash button, then push the green
 check mark. The Museum keeps up to 40 statues. When it is full, it
 removes the oldest statue.
 
+### Share a statue
+
+In the Museum, push the green **share** button under a statue. The
+game makes a link for the statue, and shows a QR code when the link is
+short enough for a phone camera.
+
+- **Send** opens the share sheet of the phone or tablet.
+- **Copy link** puts the link on the clipboard.
+
+When a person opens the link, the game shows the statue in the Museum
+room with an **Add to my Museum** button. The same link adds the statue
+only one time.
+
+The statue is in the part of the link after `#`. The browser does not
+send this part to the server, so the statue goes only to the people
+that get the link. The link keeps the shape, the material, the
+challenge shape and the stars. It does not keep the cracks. A neat
+statue makes a link of about 200 to 300 characters. A statue with a lot
+of detail makes a longer link and does not get a QR code.
+
+On iPhone and iPad, a link always opens in Safari, not in the installed
+app. Thus a statue from a link goes into the Museum in Safari.
+
 ## Install the game on a phone or a tablet
 
 Smashterpiece is a Progressive Web App (PWA). You can install it and
@@ -219,6 +242,8 @@ The modules in `src/core/` are:
 | `holes.js` | The air holes in cheese. |
 | `treasures.js` | The hidden treasures and the treasure collection. |
 | `save.js` | The automatic save, and the save file (backup) for all data. |
+| `share.js` | The statue link: one statue, compressed into the link. |
+| `qr.js` | The QR code encoder for the statue link. |
 | `random.js` | A random number generator with a seed. |
 | `carve.js` | The voxel removal for each tool. |
 | `connect.js` | The connection check. It finds the pieces that fall. |
