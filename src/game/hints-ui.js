@@ -40,9 +40,7 @@ export const hintMethods = {
     el.className = `hint ${name}`;
     el.hidden = false;
     const pad = this.settings.easyControls;
-    const words = name === 'tap'
-      ? (pad ? 'Use the arrows to aim, and the red button to hit!' : 'Tap the stone to hit it!')
-      : (pad ? 'Use the round arrows to turn the stone!' : 'Drag to turn the stone!');
+    const words = this.t(`hint.${name}${pad ? 'Pad' : ''}`);
     $('.hint-words', el).textContent = words;
     this.announce(words, true);
   },

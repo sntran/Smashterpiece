@@ -40,13 +40,13 @@ export const decorateMethods = {
         button.className = 'option swatch';
         button.style.background = paint.css;
         button.dataset.paint = String(k + 1);
-        button.setAttribute('aria-label', `${paint.name} paint`);
+        button.setAttribute('aria-label', this.t('paint.label', { name: this.t(`paint.${paint.key}`) }));
         box.appendChild(button);
       });
       const eraser = document.createElement('button');
       eraser.className = 'option swatch eraser';
       eraser.dataset.paint = '0';
-      eraser.setAttribute('aria-label', 'Remove paint');
+      eraser.setAttribute('aria-label', this.t('paint.remove'));
       eraser.innerHTML = ICONS.cross;
       box.appendChild(eraser);
     } else if (this.tool === 'sticker') {
@@ -54,7 +54,7 @@ export const decorateMethods = {
         const button = document.createElement('button');
         button.className = 'option';
         button.dataset.sticker = type;
-        button.setAttribute('aria-label', STICKER_LOOKS[type].name);
+        button.setAttribute('aria-label', this.t(`sticker.${type}`));
         button.innerHTML = type === 'eye' ? ICONS.googly : `<span>${STICKER_LOOKS[type].emoji}</span>`;
         box.appendChild(button);
       }

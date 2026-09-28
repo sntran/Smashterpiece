@@ -1521,6 +1521,8 @@ body.reduce-motion .flash.go {
 .about-name {
   font-weight: 900;
   color: var(--red);
+  /* A name stays on one line. */
+  white-space: nowrap;
 }
 
 .about-from {
@@ -1554,4 +1556,46 @@ body.reduce-motion .flash.go {
     gap: 6px;
     padding: 6px 8px;
   }
+}
+
+/* The language switch in Settings. */
+.languages {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.language {
+  min-width: 140px;
+  min-height: 52px;
+  padding: 8px 18px;
+  border: 4px solid var(--ink);
+  border-radius: 999px;
+  background: white;
+  font-weight: 900;
+  font-size: 18px;
+}
+
+.language[aria-pressed="true"] {
+  background: var(--gold);
+  box-shadow: 0 5px 0 var(--ink);
+}
+
+/* Long material names (for example "Đá hoa cương") can have two lines.
+   The hammers keep their size. */
+.tile.stone .label {
+  white-space: normal;
+  line-height: 1.1;
+  font-size: calc(var(--tile) * 0.105);
+  text-align: center;
+}
+
+.tile.stone canvas {
+  height: 40%;
+}
+
+.tile.stone .hits {
+  flex: none;
+  height: calc(var(--tile) * 0.15);
 }

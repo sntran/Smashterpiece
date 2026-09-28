@@ -7,20 +7,22 @@ import { BADGES, loadStats, saveStats, recordEvent, newBadges, earnedBadges } fr
 import { TREASURE_LOOKS } from './treasures-view.js';
 import { $ } from './dom.js';
 
+// The words for the badges are in src/core/i18n.js (badge.<id> and
+// badge.<id>.hint).
 export const BADGE_LOOKS = {
-  'first-smash': { emoji: '🔨', name: 'First Smash', hint: 'Hit a stone.' },
-  'hundred-hits': { emoji: '💪', name: '100 Hits', hint: 'Hit 100 times.' },
-  'big-crash': { emoji: '💥', name: 'Big Crash', hint: 'Make a big piece fall.' },
-  explorer: { emoji: '🌍', name: 'Explorer', hint: 'Carve all the materials.' },
-  'star-sculptor': { emoji: '🌟', name: 'Star Sculptor', hint: 'Get 3 stars.' },
-  'shape-champion': { emoji: '🏆', name: 'Shape Champion', hint: 'Get 3 stars on all the pictures.' },
-  'letter-carver': { emoji: '🔤', name: 'Letter Carver', hint: 'Finish a letter.' },
-  'museum-builder': { emoji: '🏛️', name: 'Museum Builder', hint: 'Save 5 statues.' },
-  painter: { emoji: '🎨', name: 'Painter', hint: 'Paint 100 blocks.' },
-  'silly-face': { emoji: '🤪', name: 'Silly Face', hint: 'Put on 2 googly eyes.' },
-  sharer: { emoji: '💌', name: 'Sharer', hint: 'Share a statue.' },
-  'treasure-hunter': { emoji: '🧭', name: 'Treasure Hunter', hint: 'Find 5 kinds of treasure.' },
-  'treasure-master': { emoji: '👑', name: 'Treasure Master', hint: 'Find all the treasures.' },
+  'first-smash': { emoji: '🔨' },
+  'hundred-hits': { emoji: '💪' },
+  'big-crash': { emoji: '💥' },
+  explorer: { emoji: '🌍' },
+  'star-sculptor': { emoji: '🌟' },
+  'shape-champion': { emoji: '🏆' },
+  'letter-carver': { emoji: '🔤' },
+  'museum-builder': { emoji: '🏛️' },
+  painter: { emoji: '🎨' },
+  'silly-face': { emoji: '🤪' },
+  sharer: { emoji: '💌' },
+  'treasure-hunter': { emoji: '🧭' },
+  'treasure-master': { emoji: '👑' },
 };
 
 // Keep the stats, and tell the game about each new badge.
@@ -69,11 +71,13 @@ export const collectionMethods = {
     this.sounds.treasure(RARITY[t.id]);
     const box = $('#found');
     $('.found-emoji', box).textContent = TREASURE_LOOKS[t.id].emoji;
-    $('.found-name', box).textContent = TREASURE_LOOKS[t.id].name;
+    const name = this.t(`treasure.${t.id}`);
+    $('.found-name', box).textContent = name;
+    $('.new-badge', box).textContent = this.t('tag.new');
     box.className = `found ${RARITY[t.id]}${isNew ? ' new' : ''}`;
     void box.offsetWidth;
     box.classList.add('go');
-    this.announce(`You found a ${TREASURE_LOOKS[t.id].name}!`, true);
+    this.announce(this.t('news.found', { name }), true);
     this.updateTreasureBadge();
     this.stats.event('treasures', { kinds: Object.keys(loadCollection(this.storage)).length });
   },
@@ -82,6 +86,7 @@ export const collectionMethods = {
   // open, wait: the badge must not cover the dialog.
   showBadge(id) {
     const look = BADGE_LOOKS[id];
+    const name = this.t(`badge.${id}`);
     const show = () => {
       if ($('.overlay.show')) {
         setTimeout(show, 700);
@@ -89,14 +94,14 @@ export const collectionMethods = {
       }
       const box = $('#found');
       $('.found-emoji', box).textContent = look.emoji;
-      $('.found-name', box).textContent = look.name;
-      $('.new-badge', box).textContent = 'BADGE!';
+      $('.found-name', box).textContent = name;
+      $('.new-badge', box).textContent = this.t('tag.badge');
       box.className = 'found rare new';
       void box.offsetWidth;
       box.classList.add('go');
-      setTimeout(() => { $('.new-badge', box).textContent = 'NEW!'; }, 2300);
+
       this.sounds.treasure('rare');
-      this.announce(`New badge: ${look.name}!`, true);
+      this.announce(this.t('news.badge', { name }), true);
     };
     setTimeout(show, 900);
   },
@@ -135,10 +140,10 @@ export const collectionMethods = {
       card.className = `treasure ${t.rarity}${count ? ' got' : ''}`;
       if (count) {
         card.dataset.treasure = t.id;
-        card.setAttribute('aria-label', look.name);
+        card.setAttribute('aria-label', this.t(`treasure.${t.id}`));
       }
       card.innerHTML = `<span class="t-emoji">${look.emoji}</span>`
-        + `<span class="t-name">${count ? look.name : '?'}</span>`
+        + `<span class="t-name">${count ? this.t(`treasure.${t.id}`) : '?'}</span>`
         + (count > 1 ? `<span class="t-count">x${count}</span>` : '');
       grid.appendChild(card);
     }
@@ -152,9 +157,11 @@ export const collectionMethods = {
       const card = document.createElement('div');
       card.className = `treasure badge ${got ? 'got' : ''}`;
       card.setAttribute('role', 'img');
-      card.setAttribute('aria-label', got ? `Badge: ${look.name}` : `Badge not earned yet: ${look.hint}`);
-      card.innerHTML = `<span class="t-emoji">${look.emoji}</span><span class="t-name">${look.name}</span>`
-        + `<span class="t-hint">${got ? '' : look.hint}</span>`;
+      const name = this.t(`badge.${b.id}`);
+      const hint = this.t(`badge.${b.id}.hint`);
+      card.setAttribute('aria-label', got ? this.t('book.badge', { name }) : this.t('book.notYet', { hint }));
+      card.innerHTML = `<span class="t-emoji" aria-hidden="true">${look.emoji}</span><span class="t-name">${name}</span>`
+        + `<span class="t-hint">${got ? '' : hint}</span>`;
       badges.appendChild(card);
     }
     $('#badge-count').textContent = `${earned.size} / ${BADGES.length}`;

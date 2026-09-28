@@ -15,29 +15,22 @@ const TURN_STEP = 0.12;
 const TILT_STEP = 0.08;
 const ZOOM_STEP = 1.1;
 
-// The switches in the settings panel.
+// The switches in the settings panel. The words are in src/core/i18n.js
+// (setting.<name> and setting.<name>.help).
 export const SETTING_LOOKS = [
-  { name: 'speak', icon: '🗣️', label: 'Talk', help: 'Say the names of the buttons and the news.' },
-  { name: 'easyControls', icon: '🎮', label: 'Easy controls', help: 'Big buttons to aim, hit and turn. Good for switches.' },
-  { name: 'easyMode', icon: '⭐', label: 'Easy challenges', help: 'Bigger tools. Stars come sooner.' },
-  { name: 'reduceMotion', icon: '🌙', label: 'Less motion', help: 'No shaking and less movement.' },
-  { name: 'contrast', icon: '🌗', label: 'Strong colors', help: 'Darker lines and a clearer preview.' },
-  { name: 'bigButtons', icon: '🔍', label: 'Big buttons', help: 'Make all the buttons larger.' },
-  { name: 'music', icon: '🎵', label: 'Music', help: 'Soft music in the background.' },
-  { name: 'vibrate', icon: '📳', label: 'Vibration', help: 'The device shakes a little on each hit (Android).' },
-  { name: 'showFps', icon: '⏱️', label: 'Frame rate', help: 'Show the frames each second, to check the speed.' },
+  { name: 'speak', icon: '🗣️' },
+  { name: 'easyControls', icon: '🎮' },
+  { name: 'easyMode', icon: '⭐' },
+  { name: 'reduceMotion', icon: '🌙' },
+  { name: 'contrast', icon: '🌗' },
+  { name: 'bigButtons', icon: '🔍' },
+  { name: 'music', icon: '🎵' },
+  { name: 'vibrate', icon: '📳' },
+  { name: 'showFps', icon: '⏱️' },
 ];
 
-// The words for each screen, for screen readers and for the Talk setting.
-const SCREEN_WORDS = {
-  menu: 'Smashterpiece. Pick what to do.',
-  shapes: 'Pick a shape.',
-  letters: 'Pick a letter.',
-  stones: 'Pick a material.',
-  play: 'Hit the stone!',
-  museum: 'The Museum.',
-  treasures: 'Your treasures and badges.',
-};
+// The screens that have their own words (screen.<name>).
+const SCREENS_WITH_WORDS = ['menu', 'shapes', 'letters', 'stones', 'play', 'museum', 'treasures'];
 
 function deviceSettings() {
   const query = (q) => typeof window.matchMedia === 'function' && window.matchMedia(q).matches;
@@ -48,8 +41,8 @@ export const accessMethods = {
   initAccess() {
     this.settings = loadSettings(this.storage, deviceSettings());
     this.keyboardUser = false;
-    this.buildSettingsPanel();
-    this.applySettings();
+    // The language builds the settings panel and applies the settings.
+    this.initLanguage();
     this.bindPad();
     this.watchDialogs();
     document.addEventListener('keydown', (e) => this.onKey(e));
@@ -61,14 +54,17 @@ export const accessMethods = {
     const box = $('#setting-toggles');
     box.innerHTML = '';
     for (const look of SETTING_LOOKS) {
+      const label = this.t(`setting.${look.name}`);
       const button = document.createElement('button');
       button.className = 'toggle';
       button.dataset.setting = look.name;
-      button.setAttribute('aria-pressed', 'false');
-      button.setAttribute('aria-label', look.label);
+      button.setAttribute('aria-pressed', String(!!this.settings[look.name]));
+      button.setAttribute('aria-label', label);
       button.innerHTML = `<span class="toggle-icon" aria-hidden="true">${look.icon}</span>`
-        + `<span class="toggle-text"><b>${look.label}</b><small>${look.help}</small></span>`
+        + `<span class="toggle-text"><b></b><small></small></span>`
         + '<span class="toggle-switch" aria-hidden="true"></span>';
+      $('b', button).textContent = label;
+      $('small', button).textContent = this.t(`setting.${look.name}.help`);
       box.appendChild(button);
     }
   },
@@ -81,8 +77,10 @@ export const accessMethods = {
       // The storage is full. The setting stays for this visit.
     }
     this.applySettings();
-    const look = SETTING_LOOKS.find((l) => l.name === name);
-    this.announce(`${look.label}: ${this.settings[name] ? 'on' : 'off'}.`);
+    this.announce(this.t('settings.changed', {
+      label: this.t(`setting.${name}`),
+      state: this.t(this.settings[name] ? 'common.on' : 'common.off'),
+    }));
   },
 
   applySettings() {
@@ -184,7 +182,9 @@ export const accessMethods = {
     const synth = window.speechSynthesis;
     synth.cancel();
     const words = new window.SpeechSynthesisUtterance(text);
-    words.lang = 'en-US';
+    words.lang = this.speechLang();
+    const voice = this.speechVoice();
+    if (voice) words.voice = voice;
     words.rate = 0.95;
     words.pitch = 1.15;
     synth.speak(words);
@@ -202,7 +202,7 @@ export const accessMethods = {
   // tell screen readers what the screen is.
   afterShow(name) {
     const canvas = this.canvas;
-    const words = SCREEN_WORDS[name] ?? '';
+    const words = SCREENS_WITH_WORDS.includes(name) ? this.t(`screen.${name}`) : '';
     canvas.setAttribute('aria-label', name === 'play' ? this.stoneWords() : words);
     if (this.lastScreen !== name) {
       this.lastScreen = name;
@@ -217,8 +217,14 @@ export const accessMethods = {
   },
 
   stoneWords() {
-    const shape = this.mode === 'challenge' && this.shape ? ` Make a ${this.shape.replace('letter-', 'letter ')}.` : '';
-    return `A block of ${this.stone}.${shape} Use the arrow keys to aim, and Enter to hit.`;
+    let shape = '';
+    if (this.mode === 'challenge' && this.shape) {
+      const name = this.shape.startsWith('letter-')
+        ? this.t('pick.letter', { letter: this.shape.slice(7) })
+        : this.t(`shape.${this.shape}`);
+      shape = this.t('screen.make', { shape: name });
+    }
+    return this.t('screen.stone', { stone: this.t(`stone.${this.stone}`).toLowerCase(), shape });
   },
 
   // ---------------------------------------------------------------- Keyboard
@@ -302,7 +308,7 @@ export const accessMethods = {
     this.showCursor();
     if (!this.aim) {
       this.sounds.thud();
-      return this.announce('Aim at the stone first.');
+      return this.announce(this.t('news.aimFirst'));
     }
     this.hitAt(c.x, c.y, 'keyboard');
     return undefined;

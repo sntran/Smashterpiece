@@ -38,6 +38,7 @@ import { museumMethods } from './museum-ui.js';
 import { collectionMethods, RARITY, StatsKeeper } from './collection-ui.js';
 import { decorateMethods, DECOR_TOOLS } from './decorate-ui.js';
 import { accessMethods } from './access-ui.js';
+import { langMethods } from './lang-ui.js';
 import { hintMethods } from './hints-ui.js';
 import { Music } from './music.js';
 import { setupUpdates, applyUpdateIfReady } from './update.js';
@@ -46,14 +47,6 @@ import { StickerView } from './stickers-view.js';
 // A pointer that moves less than this number of pixels makes a hit.
 const TAP_LIMIT = 8;
 const MUTE_KEY = 'smashterpiece.muted';
-const STONE_LABELS = {
-  sand: 'Sand', sandstone: 'Sandstone', chocolate: 'Chocolate', cheese: 'Cheese', ice: 'Ice',
-  wood: 'Wood', marble: 'Marble', glass: 'Glass', granite: 'Granite',
-};
-const SHAPE_LABELS = {
-  star: 'Star', fish: 'Fish', heart: 'Heart', duck: 'Duck', smiley: 'Smiley', rocket: 'Rocket',
-  cat: 'Cat', dino: 'Dinosaur', car: 'Car', house: 'House',
-};
 const WORKSHOP_TARGET = new THREE.Vector3(0, 13, 0);
 
 class Game {
@@ -157,22 +150,19 @@ class Game {
       const button = document.createElement('button');
       button.className = `tile ${shapeColors[k % shapeColors.length]}`;
       button.dataset.shape = name;
-      button.setAttribute('aria-label', SHAPE_LABELS[name]);
-      button.innerHTML = `<span class="emoji">${SHAPE_EMOJI[name]}</span><span class="label">${SHAPE_LABELS[name]}</span>`;
+      button.innerHTML = `<span class="emoji" aria-hidden="true">${SHAPE_EMOJI[name]}</span><span class="label"></span>`;
       shapeTiles.appendChild(button);
     });
     const abc = document.createElement('button');
     abc.className = 'tile yellow';
     abc.dataset.action = 'letters';
-    abc.setAttribute('aria-label', 'Letters');
-    abc.innerHTML = '<span class="emoji letter">ABC</span><span class="label">Letters</span>';
+    abc.innerHTML = '<span class="emoji letter" aria-hidden="true">ABC</span><span class="label"></span>';
     shapeTiles.appendChild(abc);
     const letterTiles = $('#letter-tiles');
     LETTERS.forEach((letter, k) => {
       const button = document.createElement('button');
       button.className = `tile ${shapeColors[k % shapeColors.length]}`;
       button.dataset.shape = `letter-${letter}`;
-      button.setAttribute('aria-label', `Letter ${letter}`);
       button.innerHTML = `<span class="emoji letter">${letter}</span>`;
       letterTiles.appendChild(button);
     });
@@ -183,7 +173,6 @@ class Game {
       button.className = 'tile stone';
       button.style.background = STONE_LOOKS[name].swatch;
       button.dataset.stone = name;
-      button.setAttribute('aria-label', `${STONE_LABELS[name]}, ${hardnessOf(name)} ${hardnessOf(name) === 1 ? 'hit' : 'hits'}`);
       const canvas = document.createElement('canvas');
       canvas.width = 160;
       canvas.height = 120;
@@ -197,7 +186,6 @@ class Game {
       hits.innerHTML = ICONS.hammer.repeat(hardnessOf(name));
       const label = document.createElement('span');
       label.className = 'label';
-      label.textContent = STONE_LABELS[name];
       button.append(canvas, label, hits);
       stoneTiles.appendChild(button);
     }
@@ -265,6 +253,7 @@ class Game {
     this.unlockAudio();
     if (this.settings.speak && !button.dataset.pad) this.sayButton(button);
     if (button.dataset.setting) return this.toggleSetting(button.dataset.setting);
+    if (button.dataset.language) return this.setLanguage(button.dataset.language);
     if (button.dataset.paint) return this.setPaint(Number(button.dataset.paint));
     if (button.dataset.sticker) return this.setStickerType(button.dataset.sticker);
     if (button.dataset.tool) return this.setTool(button.dataset.tool);
@@ -306,7 +295,7 @@ class Game {
       case 'about':
         this.sounds.select();
         $('#about').classList.add('show');
-        return this.say('For my son, Trần Nhật An Nhiên. This game was his idea. With love, from Dad.');
+        return this.say(this.t('about.say', { name: 'Trần Nhật An Nhiên' }));
       case 'close-about':
         return $('#about').classList.remove('show');
       case 'share':
@@ -615,7 +604,7 @@ class Game {
     this.dropLooseStickers();
     this.stickerView.shake(this.tool === 'hammer' ? 1 : 0.4);
     this.vibrate(this.tool === 'hammer' ? 35 : 15);
-    if (result.removed.length === 0) this.announce('Crack!');
+    if (result.removed.length === 0) this.announce(this.t('news.crack'));
     this.stats.event('hit', { stone: this.stone });
     this.hintAfterHit();
 
@@ -757,14 +746,14 @@ class Game {
       const full = fill >= 1;
       if (full && !star.classList.contains('full') && !silent) {
         this.sounds.star(k);
-        this.announce(`${k + 1} ${k === 0 ? 'star' : 'stars'}!`);
+        this.announce(this.t('news.stars', { count: k + 1 }));
       }
       star.classList.toggle('full', full);
     });
-    $('#meter-stars').setAttribute('aria-label', `Match: ${Math.round(result.score * 100)} percent`);
+    $('#meter-stars').setAttribute('aria-label', this.t('news.match', { count: Math.round(result.score * 100) }));
     const canFinish = result.score >= rules.finish;
     if (canFinish && $('[data-action="finish"]').style.display === 'none' && !silent) {
-      this.announce('You can finish now. Push the trophy.');
+      this.announce(this.t('news.canFinish'));
     }
     $('[data-action="finish"]').style.display = canFinish ? '' : 'none';
     this.lastScore = result;
@@ -962,7 +951,7 @@ class Game {
 
 Object.assign(
   Game.prototype,
-  saveMethods, shareMethods, museumMethods, collectionMethods, decorateMethods, accessMethods, hintMethods,
+  saveMethods, shareMethods, museumMethods, collectionMethods, decorateMethods, accessMethods, hintMethods, langMethods,
 );
 
 function start() {

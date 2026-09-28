@@ -46,8 +46,8 @@ export const shareMethods = {
     canvas.hidden = !qr;
     if (qr) drawQr(canvas, qr);
     $('#share-text').textContent = qr
-      ? 'Scan the code with a phone, or send the link.'
-      : 'This statue has a lot of detail. Send the link.';
+      ? this.t('share.scan')
+      : this.t('share.long');
     $('[data-action="send-link"]').style.display = navigator.share ? '' : 'none';
     $('#share-result').textContent = '';
     $('#share').classList.add('show');
@@ -70,11 +70,11 @@ export const shareMethods = {
     ctx.font = `900 ${Math.round(border * 1.1)}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('My Smashterpiece', canvas.width / 2, canvas.height - border);
+    ctx.fillText(this.t('share.caption'), canvas.width / 2, canvas.height - border);
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
     this.sounds.snap();
     this.flash('camera', true);
-    if (blob) await offerFile(new File([blob], 'my-smashterpiece.png', { type: 'image/png' }), 'My Smashterpiece');
+    if (blob) await offerFile(new File([blob], 'my-smashterpiece.png', { type: 'image/png' }), this.t('share.caption'));
   },
 
   // Save a file for a 3D printer (STL). One voxel is 2 millimeters.
@@ -84,13 +84,13 @@ export const shareMethods = {
     if (!record) return;
     const statue = decodeStatue(record);
     const file = new File([statueToStl(statue.size, statue.cells)], 'my-smashterpiece.stl', { type: 'model/stl' });
-    const result = await offerFile(file, 'My Smashterpiece');
-    $('#share-result').textContent = result === 'closed' ? '' : 'The 3D print file is ready. A 3D printer app can open it.';
+    const result = await offerFile(file, this.t('share.caption'));
+    $('#share-result').textContent = result === 'closed' ? '' : this.t('share.printReady');
   },
 
   async sendLink() {
     try {
-      await navigator.share({ title: 'My Smashterpiece', url: this.shareUrl });
+      await navigator.share({ title: this.t('share.caption'), url: this.shareUrl });
     } catch {
       // The player closed the share sheet.
     }
@@ -100,7 +100,7 @@ export const shareMethods = {
     const result = $('#share-result');
     try {
       await navigator.clipboard.writeText(this.shareUrl);
-      result.textContent = 'The link is copied.';
+      result.textContent = this.t('share.copied');
       this.sounds.select();
     } catch {
       // Without the clipboard, show the link so that a parent can copy it.

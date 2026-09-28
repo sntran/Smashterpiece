@@ -3,25 +3,26 @@
 
 import * as THREE from 'three';
 
+// The names of the treasures are in src/core/i18n.js (treasure.<id>).
 export const TREASURE_LOOKS = {
-  coin: { emoji: '🪙', name: 'Coin' },
-  shell: { emoji: '🐚', name: 'Shell' },
-  bone: { emoji: '🦴', name: 'Bone' },
-  key: { emoji: '🗝️', name: 'Key' },
-  sock: { emoji: '🧦', name: 'Sock' },
-  cookie: { emoji: '🍪', name: 'Cookie' },
-  gem: { emoji: '💎', name: 'Gem' },
-  ring: { emoji: '💍', name: 'Ring' },
-  dino: { emoji: '🦕', name: 'Dino' },
-  trophy: { emoji: '🏆', name: 'Trophy' },
-  pizza: { emoji: '🍕', name: 'Pizza' },
-  robot: { emoji: '🤖', name: 'Robot' },
-  crown: { emoji: '👑', name: 'Crown' },
-  unicorn: { emoji: '🦄', name: 'Unicorn' },
-  rainbow: { emoji: '🌈', name: 'Rainbow' },
-  alien: { emoji: '👽', name: 'Alien' },
-  dragon: { emoji: '🐉', name: 'Dragon' },
-  ufo: { emoji: '🛸', name: 'UFO' },
+  coin: { emoji: '🪙' },
+  shell: { emoji: '🐚' },
+  bone: { emoji: '🦴' },
+  key: { emoji: '🗝️' },
+  sock: { emoji: '🧦' },
+  cookie: { emoji: '🍪' },
+  gem: { emoji: '💎' },
+  ring: { emoji: '💍' },
+  dino: { emoji: '🦕' },
+  trophy: { emoji: '🏆' },
+  pizza: { emoji: '🍕' },
+  robot: { emoji: '🤖' },
+  crown: { emoji: '👑' },
+  unicorn: { emoji: '🦄' },
+  rainbow: { emoji: '🌈' },
+  alien: { emoji: '👽' },
+  dragon: { emoji: '🐉' },
+  ufo: { emoji: '🛸' },
 };
 
 const textures = new Map();

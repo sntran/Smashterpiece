@@ -29,12 +29,20 @@ messages.
   the version of each deploy into that line. On a local server, the
   version `dev` always gets the newest files.
 
+## Languages
+
+- Put each word that a player can see or hear in `src/core/i18n.js`, in
+  English and in Vietnamese. Do not write words in the code or in
+  `index.html` without a `data-i18n` attribute.
+- A test makes sure that the two languages have the same keys and the
+  same placeholders.
+
 ## Accessibility
 
 All children must be able to play. For each change, check these points:
 
-- Each button has an `aria-label`. A picture alone is not enough for a
-  screen reader.
+- Each button has an `aria-label` with a `data-i18n-aria` key. A picture
+  alone is not enough for a screen reader.
 - The game works with only a keyboard, and with only the easy controls.
 - The news of the game goes through `announce()`, so that screen readers
   and the Talk setting get it.

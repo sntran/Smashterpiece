@@ -15,9 +15,16 @@ export const DEFAULTS = {
   music: true,
   vibrate: true,
   showFps: false,
+  // null: use the language of the device.
+  language: null,
 };
 
+// The languages that a player can choose.
+const LANGUAGE_CODES = ['en', 'vi'];
+
 export const SETTING_NAMES = Object.keys(DEFAULTS);
+// The settings that are on or off.
+export const SWITCH_NAMES = SETTING_NAMES.filter((name) => typeof DEFAULTS[name] === 'boolean');
 
 // The defaults for this device.
 export function defaultSettings(device = {}) {
@@ -29,9 +36,10 @@ export function loadSettings(storage, device = {}) {
   const settings = defaultSettings(device);
   try {
     const data = JSON.parse(storage.getItem(SETTINGS_KEY) || '{}');
-    for (const name of SETTING_NAMES) {
+    for (const name of SWITCH_NAMES) {
       if (typeof data?.[name] === 'boolean') settings[name] = data[name];
     }
+    if (LANGUAGE_CODES.includes(data?.language)) settings.language = data.language;
   } catch {
     // Bad data gives the defaults.
   }
@@ -40,6 +48,7 @@ export function loadSettings(storage, device = {}) {
 
 export function saveSettings(storage, settings) {
   const clean = {};
-  for (const name of SETTING_NAMES) clean[name] = !!settings[name];
+  for (const name of SWITCH_NAMES) clean[name] = !!settings[name];
+  clean.language = LANGUAGE_CODES.includes(settings.language) ? settings.language : null;
   storage.setItem(SETTINGS_KEY, JSON.stringify(clean));
 }

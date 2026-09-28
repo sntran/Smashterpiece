@@ -38,17 +38,17 @@ export const STONE_LOOKS = {
   cheese: { swatch: '#ffd34d', dust: [1.0, 0.95, 0.7] },
 };
 
-// The paint colors. Paint 1 is the first color. The names are for the
-// buttons and for the spoken words.
+// The paint colors. Paint 1 is the first color. The names are in
+// src/core/i18n.js (paint.<key>).
 export const PAINTS = [
-  { name: 'Red', css: '#ff4d6d', rgb: [1.0, 0.3, 0.43] },
-  { name: 'Orange', css: '#ff9f1c', rgb: [1.0, 0.62, 0.11] },
-  { name: 'Yellow', css: '#ffe14d', rgb: [1.0, 0.88, 0.3] },
-  { name: 'Green', css: '#3ddc84', rgb: [0.24, 0.86, 0.52] },
-  { name: 'Sky blue', css: '#4cc9f0', rgb: [0.3, 0.79, 0.94] },
-  { name: 'Blue', css: '#4361ee', rgb: [0.26, 0.38, 0.93] },
-  { name: 'Purple', css: '#9d4edd', rgb: [0.62, 0.31, 0.87] },
-  { name: 'Black', css: '#2b2d42', rgb: [0.17, 0.18, 0.26] },
+  { key: 'red', css: '#ff4d6d', rgb: [1.0, 0.3, 0.43] },
+  { key: 'orange', css: '#ff9f1c', rgb: [1.0, 0.62, 0.11] },
+  { key: 'yellow', css: '#ffe14d', rgb: [1.0, 0.88, 0.3] },
+  { key: 'green', css: '#3ddc84', rgb: [0.24, 0.86, 0.52] },
+  { key: 'sky', css: '#4cc9f0', rgb: [0.3, 0.79, 0.94] },
+  { key: 'blue', css: '#4361ee', rgb: [0.26, 0.38, 0.93] },
+  { key: 'purple', css: '#9d4edd', rgb: [0.62, 0.31, 0.87] },
+  { key: 'black', css: '#2b2d42', rgb: [0.17, 0.18, 0.26] },
 ];
 
 // These stones let the light through.
