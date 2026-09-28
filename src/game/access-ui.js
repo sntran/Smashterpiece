@@ -51,6 +51,7 @@ export const accessMethods = {
     this.buildSettingsPanel();
     this.applySettings();
     this.bindPad();
+    this.watchDialogs();
     document.addEventListener('keydown', (e) => this.onKey(e));
     // The focus ring shows only for the keyboard.
     document.addEventListener('pointerdown', () => { this.keyboardUser = false; }, true);
@@ -101,6 +102,70 @@ export const accessMethods = {
     if (!s.speak && window.speechSynthesis) window.speechSynthesis.cancel();
     this.show(this.screen);
     if (this.screen === 'play') this.updateScore(true);
+  },
+
+  // ---------------------------------------------------------------- Dialogs
+
+  // When a dialog opens, the focus goes into it, and the page behind it is
+  // inert: a keyboard, a switch or a screen reader cannot go there. When
+  // the dialog closes, the focus goes back to the button that opened it.
+  watchDialogs() {
+    this.dialogOpeners = new Map();
+    const observer = new MutationObserver(() => this.updateDialogs());
+    for (const box of $$('.overlay')) observer.observe(box, { attributes: true, attributeFilter: ['class'] });
+  },
+
+  updateDialogs() {
+    const open = $$('.overlay.show');
+    const top = open[open.length - 1] ?? null;
+    // The live regions and the pop-ups stay outside of the inert page.
+    const keep = new Set(['announce', 'announce-now', 'confetti', 'found', 'flash']);
+    for (const el of document.body.children) {
+      if (el.tagName === 'SCRIPT' || keep.has(el.id)) continue;
+      el.inert = !!top && el !== top;
+    }
+    for (const box of $$('.overlay')) {
+      const isOpen = box.classList.contains('show');
+      const known = this.dialogOpeners.has(box);
+      if (isOpen && !known) {
+        this.dialogOpeners.set(box, document.activeElement);
+        // A pop-up must not cover the dialog. The news is in the live
+        // region already.
+        $('#found').classList.remove('go');
+        $('#flash').classList.remove('go');
+        const first = $('[data-autofocus]', box) ?? $('button:not([disabled]):not([hidden])', box);
+        if (first) setTimeout(() => first.focus({ preventScroll: true }), 0);
+      } else if (!isOpen && known) {
+        const opener = this.dialogOpeners.get(box);
+        this.dialogOpeners.delete(box);
+        if (!top) this.restoreFocus(opener);
+      }
+    }
+  },
+
+  restoreFocus(opener) {
+    const visible = (el) => el && el.isConnected && el.offsetParent !== null && !el.closest('[inert]');
+    const target = visible(opener) ? opener
+      : $(`#${this.screen} button:not([disabled]):not([hidden]):not([data-action="home"]):not([data-action="back"])`);
+    if (target) target.focus({ preventScroll: true });
+  },
+
+  // Keep the Tab key in the open dialog, also in browsers without inert.
+  trapTab(e, box) {
+    const buttons = $$('button:not([disabled]):not([hidden])', box).filter((b) => b.offsetParent !== null);
+    if (buttons.length === 0) return;
+    const first = buttons[0];
+    const last = buttons[buttons.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    } else if (!box.contains(document.activeElement)) {
+      e.preventDefault();
+      first.focus();
+    }
   },
 
   // ---------------------------------------------------------------- Words
@@ -161,7 +226,8 @@ export const accessMethods = {
   onKey(e) {
     this.unlockAudio();
     if (e.key === 'Tab') this.keyboardUser = true;
-    const open = $('.overlay.show');
+    const open = $$('.overlay.show').at(-1);
+    if (e.key === 'Tab' && open) this.trapTab(e, open);
     if (e.key === 'Escape') {
       e.preventDefault();
       if (open?.id === 'confirm') return $('#confirm [data-action="no"]').click();

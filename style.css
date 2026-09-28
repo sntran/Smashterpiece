@@ -4,7 +4,8 @@
   --cyan: #4cc9f0;
   --purple: #b388ff;
   --pink: #ff8fa3;
-  --red: #ff5d73;
+  /* White on this red has a contrast of 4.78:1 (WCAG AA). */
+  --red: #d92b4b;
   --green: #4ade80;
   --gold: #ffd35c;
   --btn: clamp(64px, 9vmin, 92px);
