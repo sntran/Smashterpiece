@@ -312,22 +312,74 @@ button svg {
   to { opacity: 1; transform: scale(1); }
 }
 
-.toolbar {
+.tool-dock {
   position: absolute;
   bottom: max(16px, env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: clamp(12px, 3vmin, 28px);
-  padding: 10px 16px 16px;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 16px);
+}
+
+.toolbar {
+  display: flex;
+  gap: clamp(8px, 2vmin, 20px);
+  padding: 10px 14px 16px;
   background: rgba(255, 255, 255, 0.55);
   border: 5px solid var(--ink);
   border-radius: 36px;
 }
 
+.tool-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 4px solid var(--ink);
+  border-radius: 24px;
+  pointer-events: auto;
+}
+
+.tool-options[hidden] {
+  display: none;
+}
+
+.option {
+  width: clamp(44px, 7vmin, 60px);
+  height: clamp(44px, 7vmin, 60px);
+  border-radius: 50%;
+  border: 4px solid var(--ink);
+  background: white;
+  font-size: clamp(24px, 4vmin, 34px);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: transform 0.12s;
+}
+
+.option.selected {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 4px var(--gold), 0 0 0 7px var(--ink);
+}
+
+.option.eraser {
+  background: #e8e3ef;
+}
+
+.option.eraser svg path {
+  stroke: var(--red);
+}
+
 .tool {
-  width: clamp(78px, 12vmin, 112px);
-  height: clamp(78px, 12vmin, 112px);
+  width: clamp(64px, 10.5vmin, 104px);
+  height: clamp(64px, 10.5vmin, 104px);
   border-radius: 28%;
   border: 5px solid var(--ink);
   background: white;
@@ -748,8 +800,15 @@ body.flashwhite::after {
   }
 
   .tool {
-    width: 72px;
-    height: 72px;
+    width: 50px;
+    height: 50px;
+    border-width: 4px;
+    box-shadow: 0 5px 0 var(--ink);
+  }
+
+  .toolbar {
+    gap: 6px;
+    padding: 8px 8px 12px;
   }
 }
 
@@ -785,19 +844,33 @@ body.flashwhite::after {
     height: 30px;
   }
 
-  .toolbar {
-    left: max(16px, env(safe-area-inset-left));
-    bottom: max(12px, env(safe-area-inset-bottom));
+  .tool-dock {
+    left: max(12px, env(safe-area-inset-left));
+    bottom: max(10px, env(safe-area-inset-bottom));
     transform: none;
+    flex-direction: row-reverse;
+    align-items: flex-end;
+  }
+
+  .toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    gap: 8px;
+    padding: 8px 12px 12px 8px;
+    border-radius: 24px;
+  }
+
+  .tool-options {
     flex-direction: column;
-    gap: 10px;
-    padding: 8px 14px 12px 8px;
-    border-radius: 28px;
+    flex-wrap: wrap;
+    max-height: calc(100vh - 110px);
   }
 
   .tool {
-    width: 60px;
-    height: 60px;
+    width: 52px;
+    height: 52px;
+    border-width: 4px;
+    box-shadow: 0 5px 0 var(--ink);
   }
 
   .tool.selected {
@@ -907,4 +980,352 @@ body.flashwhite::after {
 
 #backup-result:empty {
   display: none;
+}
+
+/* ------------------------------------------------------------------
+   Accessibility
+   ------------------------------------------------------------------ */
+
+/* Text for screen readers only. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* A clear ring on the button that has the keyboard focus. */
+button:focus-visible {
+  outline: 6px solid #1d4ed8;
+  outline-offset: 4px;
+}
+
+/* The settings panel. */
+.settings-card {
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  gap: 14px;
+}
+
+.backup-title {
+  margin: 0;
+}
+
+.toggles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 10px 12px;
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  background: #f4f1fb;
+  min-height: 64px;
+}
+
+.toggle-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.toggle-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toggle-text b {
+  font-size: 17px;
+}
+
+.toggle-text small {
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.toggle-switch {
+  flex: none;
+  width: 48px;
+  height: 28px;
+  border-radius: 999px;
+  border: 3px solid var(--ink);
+  background: #d9d4e3;
+  position: relative;
+}
+
+.toggle-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid var(--ink);
+  transition: left 0.15s;
+}
+
+.toggle[aria-pressed="true"] {
+  background: #c8f7d4;
+}
+
+.toggle[aria-pressed="true"] .toggle-switch {
+  background: var(--green);
+}
+
+.toggle[aria-pressed="true"] .toggle-switch::after {
+  left: 22px;
+}
+
+/* The aim cursor for the keyboard and the easy controls. */
+#aim-cursor {
+  position: fixed;
+  left: -24px;
+  top: -24px;
+  width: 48px;
+  height: 48px;
+  border: 5px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px var(--ink), inset 0 0 0 4px var(--ink);
+  pointer-events: none;
+  z-index: 15;
+}
+
+#aim-cursor::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin: -4px;
+  border-radius: 50%;
+  background: var(--red);
+}
+
+#aim-cursor.on-stone {
+  border-color: var(--gold);
+}
+
+#aim-cursor[hidden] {
+  display: none;
+}
+
+/* The easy controls: big buttons to aim, hit, turn and zoom. */
+.easy-pad {
+  position: absolute;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: calc(max(16px, env(safe-area-inset-bottom)) + 130px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 5px solid var(--ink);
+  border-radius: 28px;
+  pointer-events: auto;
+}
+
+.easy-pad[hidden] {
+  display: none;
+}
+
+.pad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, var(--pad));
+  gap: 6px;
+  --pad: clamp(52px, 8vmin, 72px);
+}
+
+.pad-row {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.pad {
+  width: var(--pad, 56px);
+  height: var(--pad, 56px);
+  border-radius: 16px;
+  border: 4px solid var(--ink);
+  background: white;
+  font-size: clamp(22px, 3.6vmin, 30px);
+  font-weight: 900;
+  line-height: 1;
+  touch-action: none;
+}
+
+.pad-row .pad {
+  --pad: clamp(52px, 8vmin, 72px);
+}
+
+.pad.hit {
+  background: var(--red);
+  padding: 8px;
+}
+
+.pad:active {
+  transform: scale(0.94);
+}
+
+/* Room for the easy pad on small screens. */
+@media (max-width: 600px) {
+  .easy-pad {
+    bottom: calc(max(16px, env(safe-area-inset-bottom)) + 96px);
+    padding: 6px;
+  }
+
+  .pad-grid, .pad-row .pad {
+    --pad: 48px;
+  }
+}
+
+@media (max-height: 500px) {
+  .easy-pad {
+    bottom: max(10px, env(safe-area-inset-bottom));
+    top: auto;
+    right: max(10px, env(safe-area-inset-right));
+    flex-direction: row;
+    align-items: flex-end;
+  }
+
+  body.easy-controls .side-right {
+    flex-direction: row;
+  }
+
+  .pad-row {
+    flex-direction: column;
+  }
+
+  .pad-grid, .pad-row .pad {
+    --pad: 42px;
+  }
+}
+
+/* The frame rate. */
+#fps {
+  position: fixed;
+  left: max(16px, env(safe-area-inset-left));
+  top: calc(max(16px, env(safe-area-inset-top)) + var(--btn) + 18px);
+  z-index: 40;
+  background: var(--ink);
+  color: white;
+  font: 700 14px/1 ui-monospace, monospace;
+  padding: 6px 8px;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+#fps[hidden] {
+  display: none;
+}
+
+/* Strong colors. */
+body.contrast {
+  --ink: #000000;
+}
+
+body.contrast .tile,
+body.contrast .round,
+body.contrast .tool,
+body.contrast .option,
+body.contrast .pad,
+body.contrast .toggle {
+  border-width: 7px;
+}
+
+body.contrast .tile .label {
+  background: white;
+  border-radius: 999px;
+  padding: 0 8px;
+}
+
+body.contrast .toolbar,
+body.contrast .tool-options,
+body.contrast .easy-pad,
+body.contrast .stars {
+  background: white;
+}
+
+body.contrast .overlay {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* Big buttons. */
+body.big-buttons {
+  --btn: clamp(80px, 11vmin, 112px);
+  --tile: clamp(150px, 30vmin, 260px);
+}
+
+body.big-buttons .tool {
+  width: clamp(76px, 12.5vmin, 124px);
+  height: clamp(76px, 12.5vmin, 124px);
+}
+
+body.big-buttons .option {
+  width: clamp(56px, 8.5vmin, 72px);
+  height: clamp(56px, 8.5vmin, 72px);
+}
+
+@media (max-width: 600px) {
+  body.big-buttons {
+    --btn: 64px;
+  }
+
+  body.big-buttons .tool {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+/* Less motion: no moving decoration. The pop-ups only fade. */
+body.reduce-motion *,
+body.reduce-motion *::before,
+body.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition: none !important;
+}
+
+body.reduce-motion .found.go,
+body.reduce-motion .flash.go {
+  animation: fade-only 2.2s linear forwards !important;
+}
+
+@keyframes fade-only {
+  0% { opacity: 0; transform: translate(-50%, -50%); }
+  10% { opacity: 1; transform: translate(-50%, -50%); }
+  85% { opacity: 1; transform: translate(-50%, -50%); }
+  100% { opacity: 0; transform: translate(-50%, -50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .found .rays {
+    animation: none;
+  }
+}
+
+/* The settings panel scrolls, so its close button stays inside. */
+.settings-card .close {
+  position: sticky;
+  top: 0;
+  right: 0;
+  align-self: flex-end;
+  margin-bottom: -60px;
+  z-index: 2;
 }

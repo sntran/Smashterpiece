@@ -26,7 +26,7 @@ export const TREASURE_LOOKS = {
 
 const textures = new Map();
 
-function emojiTexture(emoji) {
+export function emojiTexture(emoji) {
   if (!textures.has(emoji)) {
     const canvas = document.createElement('canvas');
     canvas.width = 128;

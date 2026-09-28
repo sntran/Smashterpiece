@@ -98,6 +98,25 @@ export const ICONS = {
     <rect x="6" y="47" width="52" height="8" fill="#b388ff"/>
     <circle cx="50" cy="48" r="13" fill="#4ade80"/>
     <path d="M50 41 V55 M43 48 H57" stroke="#fff" stroke-width="5"/>`),
+  clay: svg(`
+    <path d="M8 46 Q6 30 20 26 Q26 14 38 18 Q52 20 52 34 Q58 48 42 52 Q22 58 8 46 Z" fill="#4cc9f0"/>
+    <path d="M18 34 Q22 28 30 30" fill="none" stroke="#fff" stroke-width="4"/>
+    <circle cx="50" cy="12" r="9" fill="#4ade80"/>
+    <path d="M50 6 V18 M44 12 H56" stroke="#fff" stroke-width="4"/>`),
+  brush: svg(`
+    <rect x="28" y="4" width="9" height="30" rx="4" fill="#9d4edd" transform="rotate(35 32 32)"/>
+    <rect x="26" y="32" width="13" height="8" fill="#d7dde8" transform="rotate(35 32 32)"/>
+    <path d="M26 40 H39 L36 56 Q32.5 62 29 56 Z" fill="#ff4d6d" transform="rotate(35 32 32)"/>`),
+  sticker: svg(`
+    <path d="M10 10 H44 L54 20 V54 H10 Z" fill="#ffd35c"/>
+    <path d="M44 10 V20 H54" fill="#fff4d6"/>
+    <circle cx="24" cy="30" r="6" fill="#fff"/><circle cx="25" cy="31" r="3" fill="${LINE}" stroke="none"/>
+    <circle cx="40" cy="30" r="6" fill="#fff"/><circle cx="39" cy="29" r="3" fill="${LINE}" stroke="none"/>
+    <path d="M22 42 Q32 50 42 42" fill="none"/>`),
+  googly: svg(`
+    <circle cx="32" cy="32" r="24" fill="#fff"/>
+    <circle cx="38" cy="36" r="11" fill="${LINE}" stroke="none"/>
+    <circle cx="34" cy="31" r="3" fill="#fff" stroke="none"/>`),
   gear: svg(`
     <path d="M28 4 H36 L38 12 L44 15 L51 10 L56 15 L51 22 L54 28 L62 30 V36 L54 38 L51 44 L56 51 L51 56 L44 51 L38 54 L36 62 H28 L26 54 L20 51 L13 56 L8 51 L13 44 L10 38 L2 36 V30 L10 28 L13 22 L8 15 L13 10 L20 15 L26 12 Z" fill="#c9c3d6"/>
     <circle cx="32" cy="33" r="10" fill="#fff"/>`),

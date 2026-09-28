@@ -3,6 +3,8 @@
 
 import * as THREE from 'three';
 import { toonGradient } from './textures.js';
+import { emojiTexture } from './treasures-view.js';
+import { STICKER_LOOKS } from './stickers-view.js';
 
 const toolMaterials = [];
 
@@ -65,13 +67,52 @@ function makeFile() {
   return group;
 }
 
+function makeClay() {
+  const group = new THREE.Group();
+  const lump = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 12), toon(0x4cc9f0));
+  lump.scale.set(1.2, 0.9, 1.2);
+  lump.position.y = 1.4;
+  group.add(lump);
+  group.userData.lump = lump;
+  return group;
+}
+
+function makeBrush() {
+  const group = new THREE.Group();
+  const bristles = new THREE.Mesh(new THREE.ConeGeometry(0.8, 2.2, 14), toon(0xff4d6d));
+  bristles.rotation.x = Math.PI;
+  bristles.position.y = 1.1;
+  const ferrule = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 1.2, 14), toon(0xd7dde8));
+  ferrule.position.y = 2.7;
+  const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.6, 7, 12), toon(0x9d4edd));
+  handle.position.y = 6.8;
+  group.add(bristles, ferrule, handle);
+  group.userData.bristles = bristles;
+  return group;
+}
+
+function makeStickerTool() {
+  const group = new THREE.Group();
+  const material = new THREE.MeshBasicMaterial({ map: emojiTexture(STICKER_LOOKS.eye.emoji), transparent: true, side: THREE.DoubleSide });
+  toolMaterials.push(material);
+  const picture = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), material);
+  picture.rotation.x = -Math.PI / 2;
+  picture.position.y = 0.3;
+  group.add(picture);
+  group.userData.material = material;
+  return group;
+}
+
 const SWING_TIME = 0.08;
 const BACK_TIME = 0.22;
 
 export class ToolView {
   constructor() {
     this.group = new THREE.Group();
-    this.models = { hammer: makeHammer(), chisel: makeChisel(), file: makeFile() };
+    this.models = {
+      hammer: makeHammer(), chisel: makeChisel(), file: makeFile(),
+      clay: makeClay(), brush: makeBrush(), sticker: makeStickerTool(),
+    };
     this.pivot = new THREE.Group();
     for (const model of Object.values(this.models)) {
       model.visible = false;
@@ -82,6 +123,16 @@ export class ToolView {
     this.tool = 'hammer';
     this.swing = null;
     this.hideAt = 0;
+  }
+
+  setBrushColor(css) {
+    this.models.brush.userData.bristles.material.color.set(css);
+  }
+
+  setSticker(type) {
+    const material = this.models.sticker.userData.material;
+    material.map = emojiTexture(STICKER_LOOKS[type].emoji);
+    material.needsUpdate = true;
   }
 
   setTool(name) {
@@ -149,6 +200,15 @@ export class ToolView {
       p.position.set(12 - 12 * Math.cos(angle), 12 * Math.sin(angle) + 0.4 * a, 0);
       p.rotation.z = -angle;
       p.position.y += 1.2 * a;
+    } else if (this.tool === 'clay') {
+      p.position.y = a * 3;
+      this.models.clay.userData.lump.scale.set(1.2 + (1 - a) * 0.4, 0.9 - (1 - a) * 0.4, 1.2 + (1 - a) * 0.4);
+    } else if (this.tool === 'brush') {
+      p.position.y = 0.2 + a * 1.5;
+      p.position.x = (1 - a) * 2 - 1;
+      p.rotation.z = 0.35 - (1 - a) * 0.5;
+    } else if (this.tool === 'sticker') {
+      p.position.y = a * 2.5;
     } else if (this.tool === 'chisel') {
       p.position.y = 0.3 + a * 3;
       p.rotation.z = -0.15 * a;

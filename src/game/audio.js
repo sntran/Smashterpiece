@@ -183,6 +183,26 @@ export class Sounds {
     if (stone === 'cheese' && Math.random() < 0.3) this.squeak();
   }
 
+  // Clay goes onto the stone.
+  plop() {
+    if (!this.ready) return;
+    this.tone({ f0: 240 * vary(0.1), f1: 110, dur: 0.16, gain: 0.45 });
+    this.noise({ dur: 0.08, gain: 0.2, f0: 600 });
+  }
+
+  // The brush paints.
+  swish() {
+    if (!this.ready) return;
+    this.noise({ dur: 0.18, gain: 0.22, type: 'bandpass', f0: 1800, f1: 3200, q: 1.5, attack: 0.03 });
+  }
+
+  // A sticker goes on or comes off.
+  stickerPop() {
+    if (!this.ready) return;
+    this.tone({ f0: 500, f1: 1400, dur: 0.07, gain: 0.25 });
+    this.tone({ type: 'triangle', f0: 700, f1: 420, dur: 0.22, gain: 0.12, at: 0.06, vibrato: 30 });
+  }
+
   // A treasure comes out of the stone.
   treasure(rarity) {
     if (!this.ready) return;

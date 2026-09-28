@@ -56,7 +56,7 @@ export class FallingPieces {
       if (x < 0 || y < 0 || z < 0 || x >= size || y >= size || z >= size) return 0;
       return cells.get(x + size * (y + size * z)) ?? 0;
     };
-    const options = voxelMeshOptions({ valueAt, size, stone, hardness });
+    const options = voxelMeshOptions({ valueAt, size, stone, hardness, paint: grid.paint });
     const data = buildMesh({
       x0: min[0], y0: min[1], z0: min[2], x1: max[0] + 1, y1: max[1] + 1, z1: max[2] + 1,
       ...options,

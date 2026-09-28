@@ -4,7 +4,7 @@
 // Each request gets the copy from the cache first. At the same time, the
 // service worker gets a new copy from the network for the next visit.
 
-const CACHE = 'smashterpiece-v3';
+const CACHE = 'smashterpiece-v4';
 const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.170.0/';
 
 // All files that the game needs. The test "the service worker keeps all
@@ -18,9 +18,11 @@ const FILES = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/apple-touch-icon.png',
+  './src/core/badges.js',
   './src/core/carve.js',
   './src/core/codec.js',
   './src/core/connect.js',
+  './src/core/decorate.js',
   './src/core/grid.js',
   './src/core/history.js',
   './src/core/holes.js',
@@ -30,25 +32,30 @@ const FILES = [
   './src/core/raycast.js',
   './src/core/sand.js',
   './src/core/save.js',
-  './src/core/share.js',
   './src/core/score.js',
+  './src/core/settings.js',
   './src/core/shapes.js',
+  './src/core/share.js',
   './src/core/stones.js',
   './src/core/treasures.js',
+  './src/game/access-ui.js',
   './src/game/audio.js',
   './src/game/collection-ui.js',
   './src/game/confetti.js',
+  './src/game/decorate-ui.js',
   './src/game/dom.js',
   './src/game/icons.js',
   './src/game/main.js',
   './src/game/museum-ui.js',
   './src/game/museum-view.js',
+  './src/game/music.js',
   './src/game/palette.js',
   './src/game/particles.js',
   './src/game/pieces.js',
   './src/game/save-ui.js',
   './src/game/scene.js',
   './src/game/share-ui.js',
+  './src/game/stickers-view.js',
   './src/game/stone-view.js',
   './src/game/textures.js',
   './src/game/tools-view.js',

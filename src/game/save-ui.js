@@ -5,7 +5,7 @@ import { createBlock } from '../core/grid.js';
 import { hardnessOf } from '../core/stones.js';
 import { buildGhost } from '../core/shapes.js';
 import { countOutside } from '../core/score.js';
-import { saveProgress, loadProgress, makeBackup, parseBackup, mergeBackup } from '../core/save.js';
+import { saveProgress, loadProgress, makeBackup, parseBackup, mergeBackup, SAVED_UNDO_STEPS } from '../core/save.js';
 import { STONE_LOOKS } from './palette.js';
 import { $ } from './dom.js';
 
@@ -29,6 +29,9 @@ export const saveMethods = {
         shape: this.shape,
         size: this.grid.size,
         cells: this.grid.cells,
+        paint: this.grid.paint,
+        stickers: this.stickers,
+        undo: this.history.last(SAVED_UNDO_STEPS),
         treasures: this.treasures,
         outsideStart: this.outsideStart,
         finished: !!this.finished,
@@ -64,9 +67,14 @@ export const saveMethods = {
     this.ghost = saved.mode === 'challenge' ? buildGhost(saved.shape, saved.size) : null;
     this.grid = createBlock({ size: saved.size, hardness: this.hardness });
     this.grid.copyFrom(saved.cells);
+    this.grid.paint.set(saved.paint);
+    this.stickers = saved.stickers;
+    this.stickerView.clear();
+    this.stickerView.set(this.stickers);
     this.treasures = saved.treasures;
     this.outsideStart = saved.outsideStart || (this.ghost ? countOutside(this.grid, this.ghost.mask) : 0);
     this.history.clear();
+    this.history.load(saved.undo);
     this.pieces.clear();
     this.particles.clear();
     this.treasureView.clear();

@@ -65,20 +65,21 @@ export function fileCells(grid, cx, cy, cz, radius = 2.5, maxNeighbors = 3) {
 }
 
 // Return the indices of the voxels that the tool hits at (x, y, z).
-export function toolTargets(grid, toolName, x, y, z) {
+// In the easy mode, the hammer and the chisel are one voxel larger.
+export function toolTargets(grid, toolName, x, y, z, easy = false) {
   const tool = TOOLS[toolName];
   if (!tool) throw new Error(`Unknown tool: ${toolName}`);
-  if (tool.kind === 'sphere') return sphereCells(grid, x, y, z, tool.radius);
+  if (tool.kind === 'sphere') return sphereCells(grid, x, y, z, tool.radius + (easy ? 1 : 0));
   return fileCells(grid, x, y, z, tool.radius, tool.maxNeighbors);
 }
 
 // Tell what a hit will do, but do not change the grid.
 // `removed` holds the voxels that will break.
 // `cracked` holds the voxels that will only get cracks.
-export function planHit(grid, toolName, x, y, z) {
+export function planHit(grid, toolName, x, y, z, easy = false) {
   const removed = [];
   const cracked = [];
-  for (const i of toolTargets(grid, toolName, x, y, z)) {
+  for (const i of toolTargets(grid, toolName, x, y, z, easy)) {
     if (grid.cells[i] <= 1) removed.push(i);
     else cracked.push(i);
   }
@@ -87,8 +88,8 @@ export function planHit(grid, toolName, x, y, z) {
 
 // Hit the grid at (x, y, z). Each target voxel loses one hit point.
 // A voxel with no hit points left becomes empty.
-export function applyHit(grid, toolName, x, y, z) {
-  const plan = planHit(grid, toolName, x, y, z);
+export function applyHit(grid, toolName, x, y, z, easy = false) {
+  const plan = planHit(grid, toolName, x, y, z, easy);
   for (const i of plan.removed) grid.cells[i] = EMPTY;
   for (const i of plan.cracked) grid.cells[i] -= 1;
   return plan;

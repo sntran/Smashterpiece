@@ -37,6 +37,7 @@ export const shareMethods = {
     if (!record) return;
     const statue = decodeStatue(record);
     const text = await encodeShare(statue);
+    this.stats.event('share');
     this.shareUrl = `${location.origin}${location.pathname}${SHARE_PREFIX}${text}`;
     // A phone camera reads small QR codes best. Show the code only when
     // the link is short enough.

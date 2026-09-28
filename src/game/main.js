@@ -10,17 +10,17 @@ import { addHoles } from '../core/holes.js';
 import { makeRandom, randomInt } from '../core/random.js';
 import { placeTreasures, collectUncovered, loadCollection } from '../core/treasures.js';
 import { crumbleSand } from '../core/sand.js';
-import { applyHit, planHit } from '../core/carve.js';
+import { applyHit } from '../core/carve.js';
 import { removeFloating } from '../core/connect.js';
 import { raycastGrid } from '../core/raycast.js';
 import { History } from '../core/history.js';
 import { buildGhost, PICTURE_SHAPES, LETTERS } from '../core/shapes.js';
-import { matchScore, countOutside, FINISH_LIMIT, STAR_LIMITS } from '../core/score.js';
+import { matchScore, countOutside, limitsFor } from '../core/score.js';
 import { addStatue } from '../core/codec.js';
 import { clearProgress } from '../core/save.js';
 
 import { createRenderer, createWorkshop, floorAt } from './scene.js';
-import { StoneView, linearColors } from './stone-view.js';
+import { StoneView, linearColors, paintColor } from './stone-view.js';
 import { Particles } from './particles.js';
 import { FallingPieces } from './pieces.js';
 import { ToolView } from './tools-view.js';
@@ -35,7 +35,11 @@ import { $, $$, safeStorage } from './dom.js';
 import { saveMethods } from './save-ui.js';
 import { shareMethods } from './share-ui.js';
 import { museumMethods } from './museum-ui.js';
-import { collectionMethods, RARITY } from './collection-ui.js';
+import { collectionMethods, RARITY, StatsKeeper } from './collection-ui.js';
+import { decorateMethods, DECOR_TOOLS } from './decorate-ui.js';
+import { accessMethods } from './access-ui.js';
+import { Music } from './music.js';
+import { StickerView } from './stickers-view.js';
 
 // A pointer that moves less than this number of pixels makes a hit.
 const TAP_LIMIT = 8;
@@ -78,6 +82,12 @@ class Game {
       colorOf: (i) => this.colorOf(i),
     });
     this.treasureView = new TreasureView();
+    this.stickerView = new StickerView();
+    this.stoneView.inner.add(this.stickerView.group);
+    this.stickers = [];
+    this.paint = 1;
+    this.stickerType = 'eye';
+    this.stats = new StatsKeeper(this.storage, (id) => this.showBadge(id));
     workshop.scene.add(this.stoneView.root, this.toolView.group, this.particles.group, this.pieces.group, this.treasureView.group);
     this.museum = new MuseumView();
     this.confetti = new Confetti($('#confetti'));
@@ -109,7 +119,9 @@ class Game {
     this.sounds.setMuted(this.storage.getItem(MUTE_KEY) === '1');
     // Ask the browser to keep the saved data, also when space is low.
     navigator.storage?.persist?.().catch(() => undefined);
+    this.music = new Music(this.sounds);
     this.buildUi();
+    this.initAccess();
     this.bindInput();
     this.onResize();
     window.addEventListener('resize', () => this.onResize());
@@ -169,7 +181,7 @@ class Game {
       button.className = 'tile stone';
       button.style.background = STONE_LOOKS[name].swatch;
       button.dataset.stone = name;
-      button.setAttribute('aria-label', name);
+      button.setAttribute('aria-label', `${STONE_LABELS[name]}, ${hardnessOf(name)} ${hardnessOf(name) === 1 ? 'hit' : 'hits'}`);
       const canvas = document.createElement('canvas');
       canvas.width = 160;
       canvas.height = 120;
@@ -211,7 +223,6 @@ class Game {
       if (document.visibilityState === 'hidden') this.saveNow();
     });
     window.addEventListener('pagehide', () => this.saveNow());
-    document.addEventListener('keydown', (e) => this.onKey(e));
   }
 
   show(name) {
@@ -234,12 +245,25 @@ class Game {
       this.controls.minPolarAngle = 0.2;
     }
     this.hideAim();
+    if (name !== 'play') this.hideCursor?.();
+    if (this.settings?.reduceMotion) this.controls.autoRotate = false;
+    if (this.settings) this.afterShow(name);
+  }
+
+  // Browsers let a page make sound only after the player touches it.
+  unlockAudio() {
+    this.sounds.unlock();
+    if (this.settings?.music && !this.sounds.muted) this.music.start();
   }
 
   async onClick(e) {
     const button = e.target.closest('button');
     if (!button) return;
-    this.sounds.unlock();
+    this.unlockAudio();
+    if (this.settings.speak && !button.dataset.pad) this.sayButton(button);
+    if (button.dataset.setting) return this.toggleSetting(button.dataset.setting);
+    if (button.dataset.paint) return this.setPaint(Number(button.dataset.paint));
+    if (button.dataset.sticker) return this.setStickerType(button.dataset.sticker);
     if (button.dataset.tool) return this.setTool(button.dataset.tool);
     if (button.dataset.shape) {
       this.sounds.select();
@@ -308,6 +332,7 @@ class Game {
         this.sounds.setMuted(!this.sounds.muted);
         this.storage.setItem(MUTE_KEY, this.sounds.muted ? '1' : '0');
         this.updateSoundButton();
+        this.music.setEnabled(this.settings.music && !this.sounds.muted);
         return this.sounds.pop();
       case 'undo':
         return this.undo();
@@ -332,18 +357,6 @@ class Game {
     }
   }
 
-  onKey(e) {
-    if (this.screen !== 'play') return;
-    this.sounds.unlock();
-    if (e.key === '1') this.setTool('hammer');
-    if (e.key === '2') this.setTool('chisel');
-    if (e.key === '3') this.setTool('file');
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
-      e.preventDefault();
-      this.undo();
-    }
-  }
-
   updateSoundButton() {
     $('[data-action="sound"]').innerHTML = this.sounds.muted ? ICONS.soundOff : ICONS.soundOn;
   }
@@ -351,7 +364,12 @@ class Game {
   setTool(name) {
     this.tool = name;
     this.toolView.setTool(name);
-    for (const el of $$('[data-tool]')) el.classList.toggle('selected', el.dataset.tool === name);
+    for (const el of $$('[data-tool]')) {
+      const on = el.dataset.tool === name;
+      el.classList.toggle('selected', on);
+      el.setAttribute('aria-pressed', String(on));
+    }
+    this.buildToolOptions();
     this.sounds.select();
     this.refreshAim();
   }
@@ -430,6 +448,8 @@ class Game {
       collected: loadCollection(this.storage),
     });
     this.treasureView.clear();
+    this.stickers = [];
+    this.stickerView.clear();
     this.outsideStart = this.ghost ? countOutside(this.grid, this.ghost.mask) : 0;
     this.playing = true;
     clearProgress(this.storage);
@@ -490,6 +510,8 @@ class Game {
   }
 
   colorOf(i) {
+    const paint = this.grid.paint[i];
+    if (paint) return paintColor(paint);
     const colors = linearColors(this.stone, this.grid.size);
     return [colors[i * 3], colors[i * 3 + 1], colors[i * 3 + 2]];
   }
@@ -516,7 +538,7 @@ class Game {
       this.aimPoint = { x: clientX, y: clientY };
       return;
     }
-    const plan = planHit(this.grid, this.tool, hit.x, hit.y, hit.z);
+    const plan = this.planFor(hit);
     this.stoneView.showPreview(plan);
     const n = new THREE.Vector3(...hit.normal);
     const point = this.stoneView.toWorld(hit.x + 0.5 + n.x * 0.5, hit.y + 0.5 + n.y * 0.5, hit.z + 0.5 + n.z * 0.5);
@@ -549,15 +571,16 @@ class Game {
 
   impact(hit) {
     const grid = this.grid;
-    const before = grid.cells.slice();
-    const result = applyHit(grid, this.tool, hit.x, hit.y, hit.z);
     const n = new THREE.Vector3(...hit.normal);
     const point = this.stoneView.toWorld(hit.x + 0.5 + n.x * 0.5, hit.y + 0.5 + n.y * 0.5, hit.z + 0.5 + n.z * 0.5);
+    if (DECOR_TOOLS.includes(this.tool)) return this.decorate(hit, point);
+    const before = this.snapshot();
+    const result = applyHit(grid, this.tool, hit.x, hit.y, hit.z, this.easyMode);
     if (result.removed.length === 0 && result.cracked.length === 0) {
       this.sounds.thud();
       this.particles.puff(point, new THREE.Vector3(0, 2, 0), 1.2, [1, 1, 1]);
       this.shake = Math.max(this.shake, 0.15);
-      return;
+      return undefined;
     }
     this.history.push(before);
     const crumbled = crumblesOf(this.stone) && result.removed.length > 0 ? crumbleSand(grid, hit.x, hit.y, hit.z) : [];
@@ -567,11 +590,25 @@ class Game {
     this.stoneView.markCells(result.cracked);
     for (const piece of pieces) this.stoneView.markCells(piece.map((c) => c.index));
     this.stoneView.flush();
-    for (const piece of pieces) this.pieces.add(piece, grid, this.stone, this.hardness);
+    for (const piece of pieces) {
+      this.pieces.add(piece, grid, this.stone, this.hardness);
+      this.stats.event('piece', { size: piece.length });
+    }
     for (const t of collectUncovered(grid, this.treasures)) this.findTreasure(t);
+    this.dropLooseStickers();
+    this.stickerView.shake(this.tool === 'hammer' ? 1 : 0.4);
+    this.vibrate(this.tool === 'hammer' ? 35 : 15);
+    if (result.removed.length === 0) this.announce('Crack!');
+    this.stats.event('hit', { stone: this.stone });
 
     this.effects(result, point, n, before);
     if (crumbled.length > 0) this.pourSand(crumbled);
+    this.afterChange();
+    return undefined;
+  }
+
+  // Update the buttons, the score and the save after a change.
+  afterChange() {
     this.unsaved = true;
     this.scheduleSave();
     this.updateButtons();
@@ -668,9 +705,9 @@ class Game {
   }
 
   undo() {
-    const cells = this.history.undo();
-    if (!cells) return;
-    this.grid.copyFrom(cells);
+    const state = this.history.undo();
+    if (!state) return;
+    this.restoreSnapshot(state);
     this.stoneView.markAll();
     this.stoneView.flush();
     this.sounds.undo();
@@ -691,18 +728,27 @@ class Game {
   // Update the star meter of the challenge.
   updateScore(silent = false) {
     if (this.mode !== 'challenge' || !this.ghost) return;
-    const result = matchScore(this.grid, this.ghost.mask, this.outsideStart);
-    const limits = [0, FINISH_LIMIT, STAR_LIMITS[0], STAR_LIMITS[1]];
+    const rules = limitsFor(this.easyMode);
+    const result = matchScore(this.grid, this.ghost.mask, this.outsideStart, this.easyMode);
+    const limits = [0, rules.finish, rules.stars[0], rules.stars[1]];
     const stars = $$('#meter-stars .star');
     stars.forEach((star, k) => {
       const part = (result.score - limits[k]) / (limits[k + 1] - limits[k]);
       const fill = Math.max(0, Math.min(1, part));
       star.querySelector('.fill').style.clipPath = `inset(${(1 - fill) * 100}% 0 0 0)`;
       const full = fill >= 1;
-      if (full && !star.classList.contains('full') && !silent) this.sounds.star(k);
+      if (full && !star.classList.contains('full') && !silent) {
+        this.sounds.star(k);
+        this.announce(`${k + 1} ${k === 0 ? 'star' : 'stars'}!`);
+      }
       star.classList.toggle('full', full);
     });
-    $('[data-action="finish"]').style.display = result.score >= FINISH_LIMIT ? '' : 'none';
+    $('#meter-stars').setAttribute('aria-label', `Match: ${Math.round(result.score * 100)} percent`);
+    const canFinish = result.score >= rules.finish;
+    if (canFinish && $('[data-action="finish"]').style.display === 'none' && !silent) {
+      this.announce('You can finish now. Push the trophy.');
+    }
+    $('[data-action="finish"]').style.display = canFinish ? '' : 'none';
     this.lastScore = result;
   }
 
@@ -721,6 +767,7 @@ class Game {
       }, 450 + k * 350);
     });
     this.sounds.hooray();
+    this.stats.event('finish', { shape: this.shape, stars });
     this.confetti.burst(200);
     setTimeout(() => this.confetti.burst(120), 900);
   }
@@ -732,11 +779,14 @@ class Game {
       addStatue(this.storage, {
         size: this.grid.size,
         cells: this.grid.cells,
+        paint: this.grid.paint,
+        stickers: this.stickers,
         stone: this.stone,
         shape: this.mode === 'challenge' ? this.shape : null,
         stars,
         created: Date.now(),
       });
+      this.stats.event('save');
     } catch {
       // The storage is full.
       this.flash('cross');
@@ -755,7 +805,8 @@ class Game {
   bindInput() {
     const canvas = this.canvas;
     canvas.addEventListener('pointerdown', (e) => {
-      this.sounds.unlock();
+      if (this.cursorActive) this.hideCursor();
+      this.unlockAudio();
       this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (this.pointers.size === 1) {
         this.tap = { id: e.pointerId, x: e.clientX, y: e.clientY, type: e.pointerType };
@@ -850,6 +901,7 @@ class Game {
       this.pieces.update(dt);
       this.particles.update(dt);
       this.treasureView.update(dt);
+      this.stickerView.update(dt, time, this.settings?.reduceMotion);
       if (this.screen === 'play') this.showHints(dt);
       // The stone wobbles like jelly after a hit.
       this.wobble = Math.max(0, this.wobble - dt * 3);
@@ -858,6 +910,11 @@ class Game {
     }
 
     // Shake the camera only for this frame.
+    this.updateFps(dt);
+    if (this.settings.reduceMotion) {
+      this.shake = 0;
+      this.wobble = 0;
+    }
     this.shake = Math.max(0, this.shake - dt * 2.5);
     const offset = new THREE.Vector3(
       (Math.random() - 0.5) * this.shake,
@@ -883,7 +940,7 @@ class Game {
   }
 }
 
-Object.assign(Game.prototype, saveMethods, shareMethods, museumMethods, collectionMethods);
+Object.assign(Game.prototype, saveMethods, shareMethods, museumMethods, collectionMethods, decorateMethods, accessMethods);
 
 function start() {
   try {

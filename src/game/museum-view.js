@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { decodeStatue } from '../core/codec.js';
 import { STONES } from '../core/stones.js';
 import { buildVoxelMeshes } from './stone-view.js';
+import { makeSticker } from './stickers-view.js';
 import { addLights } from './scene.js';
 import { checkerTexture, wallTexture, toonGradient } from './textures.js';
 import { shapeIcon } from './icons.js';
@@ -155,12 +156,18 @@ export class MuseumView {
       size,
       stone,
       hardness: STONES[stone].hardness,
+      paint: statue.paint,
     });
     for (const mesh of meshes) {
       mesh.matrixAutoUpdate = true;
       // The stone materials are shared. Do not dispose them.
       mesh.userData.shared = true;
       group.add(mesh);
+    }
+    for (const s of statue.stickers ?? []) {
+      const sticker = makeSticker(s);
+      sticker.traverse((part) => { part.userData.shared = true; });
+      group.add(sticker);
     }
     group.userData.shared = true;
     return group;
@@ -198,7 +205,12 @@ export class MuseumView {
     const groups = this.items.map((item) => item.mesh);
     const hits = raycaster.intersectObjects(groups, true);
     if (hits.length === 0) return -1;
-    return groups.indexOf(hits[0].object.parent);
+    // Walk up from the part that the ray hit to the statue group.
+    for (let object = hits[0].object; object; object = object.parent) {
+      const index = groups.indexOf(object);
+      if (index >= 0) return index;
+    }
+    return -1;
   }
 
   update(time) {
